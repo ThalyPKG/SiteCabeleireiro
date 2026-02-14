@@ -233,11 +233,8 @@ Seu agendamento foi confirmado ✅
 📞 Telefone: {telefone}
 """
 
-        mail.send(Message(
-            subject="Agendamento confirmado ✂️",
-            recipients=[session["email"]],
-            body=mensagem_cliente
-        ))
+        enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
+
 
         # ===== EMAIL ADMIN =====
         mensagem_admin = f"""
@@ -252,11 +249,8 @@ Serviços: {", ".join(servicos)}
 Total: R$ {total}
 """
 
-        mail.send(Message(
-            subject="Novo agendamento recebido",
-            recipients=[ADMIN_EMAIL],
-            body=mensagem_admin
-        ))
+        enviar_email(ADMIN_EMAIL, "Novo agendamento recebido", mensagem_admin)
+
 
         cursor.close()
         db.close()
@@ -363,7 +357,12 @@ def contato():
         )
 
         msg.body = f"Nome: {nome}\nEmail: {email}\nMensagem: {mensagem}"
-        mail.send(msg)
+        enviar_email(
+            "thalysondasilvaribeiro@gmail.com",
+            f"Nova mensagem de contato de {nome}",
+            msg.body
+        )
+
 
         flash("Mensagem enviada com sucesso!", "sucesso")
         return redirect(url_for("index"))  # ✅ AGORA SIM
@@ -509,6 +508,24 @@ def enviar_email(destino, assunto, mensagem):
 @app.route("/sobre")
 def sobre():
     return render_template("sobre.html")
+
+def enviar_email(destino, assunto, mensagem):
+
+    requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {os.getenv('RESEND_API_KEY')}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "from": "onboarding@resend.dev",
+            "to": destino,
+            "subject": assunto,
+            "text": mensagem,
+        },
+    )
+
+
 
 
 if __name__ == "__main__":
