@@ -9,9 +9,6 @@ import re
 import secrets
 import hashlib
 import os
-import mercadopago
-
-sdk = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
 
 
 app = Flask(__name__)
