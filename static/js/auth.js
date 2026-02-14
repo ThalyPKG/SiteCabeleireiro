@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    // ================= SENHA NOVA =================
     const senhaInput = document.getElementById("senha");
     const toggleSenha = document.getElementById("toggleSenha");
     const msgSenha = document.getElementById("msg-senha");
@@ -44,7 +43,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ================= TOGGLE OLHO =================
     function ativarOlho(inputId, toggleId) {
         const input = document.getElementById(inputId);
         const toggle = document.getElementById(toggleId);
@@ -65,7 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ativarOlho("senha-login", "toggle-login");
     ativarOlho("confirmar", "toggleConfirmar");
 
-    // ================= CONFIRMAR SENHA =================
     const confirmarInput = document.getElementById("confirmar");
 
     if (senhaInput && confirmarInput) {
@@ -78,7 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-// ================= MENU MOBILE =================
 const toggle = document.getElementById("menu-toggle");
 const navMenu = document.getElementById("nav-menu");
 const overlay = document.getElementById("menu-overlay");
@@ -89,7 +85,6 @@ if (toggle && navMenu && overlay) {
         overlay.classList.toggle("active");
     });
 
-    // clicar fora fecha
     overlay.addEventListener("click", () => {
         navMenu.classList.remove("active");
         overlay.classList.remove("active");

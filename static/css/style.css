@@ -97,17 +97,15 @@ img {
     max-width: 450px;
 }
 
-/* ================= MOBILE ================= */
+/*MOBILE*/
 
 @media (max-width: 768px) {
 
-    /* Mostrar hambúrguer */
     .menu-toggle {
         display: block;
         z-index: 1001;
     }
 
-    /* Menu lateral */
     .nav-menu {
         position: fixed;
         top: 0;
@@ -156,7 +154,7 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5); /* escurece o fundo */
+    background: rgba(0,0,0,0.5);
     z-index: 999;
     transition: opacity 0.3s ease;
 }

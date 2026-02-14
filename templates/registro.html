@@ -19,7 +19,6 @@
         <form action="/registro" method="POST">
             <h1>Criar uma conta</h1>
 
-            <!-- FLASH -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for categoria, mensagem in messages %}

@@ -17,8 +17,6 @@ app.secret_key = os.getenv("SECRET_KEY")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
 
-# ================= EMAIL =================
-
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
@@ -29,12 +27,9 @@ app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 mail = Mail(app)
 ADMIN_EMAIL = os.getenv("MAIL_USERNAME")
 
-# ===== SERIALIZER RESET SENHA =====
 serializer = URLSafeTimedSerializer(app.secret_key)
 
 
-
-# ================= DATABASES =================
 
 def get_db_login():
     return mysql.connector.connect(
@@ -57,7 +52,6 @@ def get_db_salao():
 
 
 
-# ================= VALIDAÇÕES =================
 
 def email_valido(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
@@ -71,7 +65,6 @@ def senha_valida(senha):
     )
 
 
-# ================= ROTAS =================
 
 @app.route("/")
 def home():
@@ -83,7 +76,6 @@ def index():
     return render_template("index.html")
 
 
-# ---------- REGISTRO ----------
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
@@ -124,7 +116,6 @@ def registro():
     return render_template("registro.html")
 
 
-# ---------- LOGIN ----------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -162,7 +153,6 @@ def logout():
     return redirect("/login")
 
 
-# ---------- AGENDAMENTO ----------
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
@@ -173,7 +163,6 @@ def agendamento():
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
-    # ================= POST =================
     if request.method == "POST":
 
         data = request.form.get("data")
@@ -186,7 +175,6 @@ def agendamento():
             flash("Preencha todos os campos", "erro")
             return redirect("/agendamento")
 
-        # verifica se já existe
         cursor.execute("""
             SELECT id FROM agendamentos
             WHERE data=%s AND horario=%s
@@ -214,7 +202,6 @@ def agendamento():
         db.commit()
         agendamento_id = cursor.lastrowid
 
-        # ===== EMAIL CLIENTE =====
         data_formatada = datetime.strptime(
             data, "%Y-%m-%d"
         ).strftime("%d/%m/%Y")
@@ -234,7 +221,6 @@ Seu agendamento foi confirmado ✅
         enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
 
 
-        # ===== EMAIL ADMIN =====
         mensagem_admin = f"""
 NOVO AGENDAMENTO RECEBIDO
 
@@ -255,7 +241,6 @@ Total: R$ {total}
 
         return redirect(url_for("confirmacao", id=agendamento_id))
 
-    # ================= GET (CARREGA HORÁRIOS) =================
 
     cursor.execute("SELECT data, horario FROM agendamentos")
     ocupados_db = cursor.fetchall()
@@ -282,8 +267,6 @@ Total: R$ {total}
 
 
 
-# ---------- CONFIRMAÇÃO ----------
-
 @app.route("/confirmacao/<int:id>")
 def confirmacao(id):
 
@@ -306,7 +289,6 @@ def confirmacao(id):
                            agendamento=agendamento)
 
 
-# ---------- LISTA AGENDAMENTOS ----------
 
 @app.route("/agendamentos")
 def agendamentos():
@@ -314,7 +296,7 @@ def agendamentos():
     if "usuario_id" not in session:
         return redirect(url_for("login"))
 
-    db = get_db_salao()   # ✅ banco correto
+    db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
     usuario_id = session["usuario_id"]
@@ -340,8 +322,6 @@ def agendamentos():
     )
 
 
-# ================= RUN =================
-
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
     if request.method == "POST":
@@ -363,9 +343,9 @@ def contato():
 
 
         flash("Mensagem enviada com sucesso!", "sucesso")
-        return redirect(url_for("index"))  # ✅ AGORA SIM
+        return redirect(url_for("index"))
 
-    return render_template("contato.html")  # ✅ GET obrigatório
+    return render_template("contato.html")
 
 @app.route("/api/horarios/<data>")
 def api_horarios(data):
@@ -388,18 +368,15 @@ def api_horarios(data):
         if not h:
             continue
 
-        # 🔥 caso seja timedelta
         if isinstance(h, timedelta):
             total_minutes = h.seconds // 60
             horas = total_minutes // 60
             minutos = total_minutes % 60
             horarios.append(f"{horas:02d}:{minutos:02d}")
 
-        # 🔥 caso seja time normal
         elif hasattr(h, "strftime"):
             horarios.append(h.strftime("%H:%M"))
 
-        # 🔥 fallback
         else:
             horarios.append(str(h)[:5])
 
@@ -410,7 +387,6 @@ def api_horarios(data):
 
 
 
-    #esqueceu senha
 
 @app.route("/esqueceu-senha", methods=["GET","POST"])
 def esqueceu_senha():
@@ -432,7 +408,6 @@ def esqueceu_senha():
             flash("Email não encontrado", "erro")
             return redirect("/esqueceu-senha")
 
-        # 🔥 gera token seguro
         token = serializer.dumps(email, salt="reset-senha")
 
         link = f"{os.getenv('BASE_URL')}{url_for('redefinir_senha', token=token)}"
@@ -472,7 +447,7 @@ def redefinir_senha(token):
         email = serializer.loads(
             token,
             salt="reset-senha",
-            max_age=900  # 🔥 15 minutos
+            max_age=900
         )
     except:
         flash("Link inválido ou expirado", "erro")
@@ -511,17 +486,25 @@ def redefinir_senha(token):
 def sobre():
     return render_template("sobre.html")
 
+from threading import Thread
+
+def enviar_email_async(app, msg):
+    with app.app_context():
+        try:
+            mail.send(msg)
+            print("Email enviado!")
+        except Exception as e:
+            print("Erro ao enviar email:", e)
+
 def enviar_email(destino, assunto, mensagem):
-    try:
-        msg = Message(
-            subject=assunto,
-            recipients=[destino],
-            body=mensagem
-        )
-        mail.send(msg)
-        print("Email enviado com sucesso!")
-    except Exception as e:
-        print("Erro ao enviar email:", e)
+    msg = Message(
+        subject=assunto,
+        recipients=[destino],
+        body=mensagem
+    )
+
+    Thread(target=enviar_email_async, args=(app, msg)).start()
+
 
 
 

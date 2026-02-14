@@ -10,7 +10,6 @@
 </head>
 <body>
 
-    <!-- Navbar -->
     <header>
         <nav class="navbar section-content">
             <a href="{{ url_for('index') }}" class="nav-logo">
@@ -36,7 +35,6 @@
         </nav>
     </header>
 
-    <!-- Flash mensagens -->
     <div class="flash-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -47,7 +45,6 @@
         {% endwith %}
     </div>
 
-    <!-- Conteúdo principal -->
     <main>
         {% block content %}{% endblock %}
     </main>

@@ -5,7 +5,6 @@ const menuToggle = document.getElementById("menu-toggle");
 const navMenu = document.getElementById("nav-menu");
 const menuOverlay = document.getElementById("menu-overlay");
 
-// MENU (proteção contra null)
 if (menuToggle && navMenu && menuOverlay) {
 
   menuToggle.addEventListener("click", (e) => {
@@ -44,7 +43,6 @@ cards.forEach(card => {
 
 
 
-// DATA E HORÁRIOS
 const dataInput = document.getElementById("data");
 const msgData = document.getElementById("msgData");
 const horariosContainer = document.getElementById("horarios");
@@ -65,7 +63,6 @@ dataInput.addEventListener("change", async () => {
     return;
   }
 
-  // 🔥 busca horários atualizados no servidor
   const response = await fetch(`/api/horarios/${dataSelecionada}`);
   const horariosOcupados = await response.json();
 
@@ -130,7 +127,7 @@ form.addEventListener("submit", function(e) {
 const telefoneInput = document.getElementById("telefone");
 
 telefoneInput.addEventListener("input", function (e) {
-  let value = e.target.value.replace(/\D/g, ""); // remove tudo que não for número
+  let value = e.target.value.replace(/\D/g, "");
 
   if (value.length > 11) {
     value = value.slice(0, 11);
