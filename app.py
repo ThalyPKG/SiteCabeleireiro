@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
+from itsdangerous import URLSafeTimedSerializer
 import mysql.connector
 import os
 import re
@@ -29,6 +30,10 @@ app.config["MAIL_DEFAULT_SENDER"] = ("Jefferson Cabeleireiro",
 mail = Mail(app)
 ADMIN_EMAIL = os.getenv("MAIL_USERNAME")
 
+# ===== SERIALIZER RESET SENHA =====
+serializer = URLSafeTimedSerializer(app.secret_key)
+
+
 
 # ================= DATABASES =================
 
@@ -44,12 +49,13 @@ def get_db_login():
 
 def get_db_salao():
     return mysql.connector.connect(
-        host=os.getenv("DB_LOGIN_HOST") or "127.0.0.1",
-        user=os.getenv("DB_LOGIN_USER") or "root",
-        password=os.getenv("DB_LOGIN_PASSWORD") or "",
+        host=os.getenv("DB_SALAO_HOST") or "127.0.0.1",
+        user=os.getenv("DB_SALAO_USER") or "root",
+        password=os.getenv("DB_SALAO_PASSWORD") or "",
         database=os.getenv("DB_SALAO_NAME"),
-        port=int(os.getenv("DB_LOGIN_PORT", 3306))
+        port=int(os.getenv("DB_SALAO_PORT", 3306))
     )
+
 
 
 # ================= VALIDAÇÕES =================
@@ -388,6 +394,104 @@ def api_horarios(data):
     db.close()
 
     return jsonify(horarios)
+
+    #esqueceu senha
+
+@app.route("/esqueceu-senha", methods=["GET","POST"])
+def esqueceu_senha():
+
+    if request.method == "POST":
+
+        email = request.form.get("email")
+
+        db = get_db_login()
+        cursor = db.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuario WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        cursor.close()
+        db.close()
+
+        if not user:
+            flash("Email não encontrado", "erro")
+            return redirect("/esqueceu-senha")
+
+        # 🔥 gera token seguro
+        token = serializer.dumps(email, salt="reset-senha")
+
+        link = f"{os.getenv('BASE_URL')}{url_for('redefinir_senha', token=token)}"
+
+
+        msg = Message(
+            subject="Redefinição de senha",
+            recipients=[email]
+        )
+
+        msg.body = f"""
+Olá!
+
+Clique no link abaixo para redefinir sua senha:
+
+{link}
+
+Esse link expira em 15 minutos.
+
+Caso não tenho sido você, ignora esse email!
+"""
+
+
+
+        mail.send(msg)
+
+        flash("Email enviado! Verifique sua caixa.", "sucesso")
+        return redirect("/login")
+
+    return render_template("esqueceu-senha.html")
+
+
+@app.route("/redefinir-senha/<token>", methods=["GET","POST"])
+def redefinir_senha(token):
+
+    try:
+        email = serializer.loads(
+            token,
+            salt="reset-senha",
+            max_age=900  # 🔥 15 minutos
+        )
+    except:
+        flash("Link inválido ou expirado", "erro")
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        nova_senha = request.form.get("senha")
+
+        if not senha_valida(nova_senha):
+            flash("Senha fraca", "erro")
+            return redirect(request.url)
+
+        senha_hash = generate_password_hash(nova_senha)
+
+        db = get_db_login()
+        cursor = db.cursor()
+
+        cursor.execute("""
+            UPDATE usuario
+            SET senha=%s
+            WHERE email=%s
+        """, (senha_hash, email))
+
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        flash("Senha redefinida com sucesso!", "sucesso")
+        return redirect("/login")
+
+    return render_template("redefinir-senha.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
