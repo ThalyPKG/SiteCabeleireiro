@@ -51,6 +51,51 @@ db_salao = mysql.connector.connect(
     port=int(os.getenv("MYSQLPORT"))
 )
 
+
+def criar_tabelas():
+    cursor_login = db_login.cursor()
+    cursor_salao = db_salao.cursor()
+
+    # Tabela usuario
+    cursor_login.execute("""
+    CREATE TABLE IF NOT EXISTS usuario (
+        codigo INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        senha VARCHAR(255) NOT NULL
+    )
+    """)
+
+    # Tabela password_resets
+    cursor_login.execute("""
+    CREATE TABLE IF NOT EXISTS password_resets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        expires_at DATETIME NOT NULL
+    )
+    """)
+
+    # Tabela agendamentos
+    cursor_salao.execute("""
+    CREATE TABLE IF NOT EXISTS agendamentos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT,
+        data DATE NOT NULL,
+        horario TIME NOT NULL,
+        servicos TEXT NOT NULL,
+        total DECIMAL(10,2) NOT NULL,
+        telefone VARCHAR(20) NOT NULL,
+        email VARCHAR(255) NOT NULL
+    )
+    """)
+
+    db_login.commit()
+    db_salao.commit()
+
+criar_tabelas()
+
+
+
 # Funções de validação
 def email_valido(email):
     padrao = r'^[\w\.-]+@[\w\.-]+\.\w+$'
