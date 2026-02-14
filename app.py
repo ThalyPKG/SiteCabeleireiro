@@ -17,12 +17,12 @@ app.secret_key = os.getenv("SECRET_KEY")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
 
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_SERVER"] = "smtp-relay.brevo.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
 
 mail = Mail(app)
 ADMIN_EMAIL = os.getenv("MAIL_USERNAME")
@@ -488,22 +488,17 @@ def sobre():
 
 from threading import Thread
 
-def enviar_email_async(app, msg):
-    with app.app_context():
-        try:
-            mail.send(msg)
-            print("Email enviado!")
-        except Exception as e:
-            print("Erro ao enviar email:", e)
-
 def enviar_email(destino, assunto, mensagem):
-    msg = Message(
-        subject=assunto,
-        recipients=[destino],
-        body=mensagem
-    )
-
-    Thread(target=enviar_email_async, args=(app, msg)).start()
+    try:
+        msg = Message(
+            subject=assunto,
+            recipients=[destino],
+            body=mensagem
+        )
+        mail.send(msg)
+        print("Email enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar email:", e)
 
 
 
