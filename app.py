@@ -110,7 +110,7 @@ def senha_valida(senha):
 # ROTAS
 
 @app.route("/")
-def index():
+def home():
     return redirect("/index")
 
 @app.route("/index")
