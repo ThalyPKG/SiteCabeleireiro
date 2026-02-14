@@ -49,52 +49,57 @@ const dataInput = document.getElementById("data");
 const msgData = document.getElementById("msgData");
 const horariosContainer = document.getElementById("horarios");
 
-const horariosOcupados = JSON.parse(horariosContainer.dataset.ocupados || "{}");
 
+dataInput.addEventListener("change", async () => {
 
-dataInput.addEventListener("change", () => {
-  const dataSelecionada = new Date(dataInput.value);
-  const diaSemana = dataSelecionada.getDay();
+  const dataSelecionada = dataInput.value;
 
   horariosContainer.innerHTML = "";
   msgData.textContent = "";
 
-  // 6 = Domingo | 0 = Segunda
+  const dataObj = new Date(dataSelecionada);
+  const diaSemana = dataObj.getDay();
+
   if (diaSemana === 6 || diaSemana === 0) {
     msgData.textContent = "Trabalhamos apenas de terça a sábado.";
     return;
   }
 
+  // 🔥 busca horários atualizados no servidor
+  const response = await fetch(`/api/horarios/${dataSelecionada}`);
+  const horariosOcupados = await response.json();
+
   const horarios = [
-    "07:10", "14:50", "08:10",
-    "15:40", "09:00", "16:30",
-    "09:50", "17:20", "10:40",
-    "18:10", "11:30", "19:00",
-    "14:00", "19:50",
+    "07:10","14:50","08:10","15:40","09:00","16:30",
+    "09:50","17:20","10:40","18:10","11:30","19:00",
+    "14:00","19:50",
   ];
 
-horarios.forEach(h => {
+  horarios.forEach(h => {
+
     const btn = document.createElement("div");
     btn.classList.add("horario-btn");
     btn.textContent = h;
 
-    // Bloquear se o horário já estiver ocupado
-    if (horariosOcupados[dataInput.value]?.includes(h)) {
+    if (horariosOcupados.includes(h)) {
         btn.classList.add("ocupado");
-        btn.style.backgroundColor = "grey"; // ou use CSS
+        btn.style.backgroundColor = "grey";
         btn.style.cursor = "not-allowed";
     } else {
         btn.addEventListener("click", () => {
-            document.querySelectorAll(".horario-btn").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".horario-btn")
+              .forEach(b => b.classList.remove("active"));
+
             btn.classList.add("active");
             document.getElementById("horarioSelecionado").value = h;
         });
     }
 
     horariosContainer.appendChild(btn);
-});
+  });
 
 });
+
 
 const form = document.querySelector("form");
 
