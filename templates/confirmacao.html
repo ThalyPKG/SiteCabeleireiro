@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamento Confirmado</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/confirmacao.css') }}">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="icon">
+        ✅
+      </div>
+      <h1>Agendamento Confirmado!</h1>
+      <p>Obrigado por escolher <b>Jefferson Cabeleireiro</b>. Seguem os detalhes do seu agendamento:</p>
+
+      <div class="detalhes">
+        <p><b>Data:</b> {{ agendamento.data.strftime("%d/%m/%Y") }}</p>
+        <p><b>Horário:</b> {{ agendamento.horario }}</p>
+        <p><b>Serviços:</b> {{ agendamento.servicos }}</p>
+        <p><b>Total:</b> R$ {{ agendamento.total }}</p>
+      </div>
+
+      <a href="{{ url_for('index') }}" class="btn">Voltar para Home</a>
+    </div>
+  </div>
+</body>
+</html>

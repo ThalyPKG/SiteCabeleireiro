@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('../img/background.png') no-repeat center;
+    background-size: cover;
+}
+
+/* container */
+form {
+    width: 30%;
+    background: transparent;
+    color: #fff;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* input */
+input[type="email"] {
+    width: 100%;
+    height: 50px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 40px;
+    padding: 0 20px;
+    font-size: 16px;
+    color: #fff;
+    outline: none;
+}
+
+input::placeholder {
+    color: #fff;
+}
+
+/* botão */
+button {
+    width: 100%;
+    height: 45px;
+    border: none;
+    border-radius: 40px;
+    background: #fff;
+    color: #777;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+button:hover {
+    background: #f0f0f0;
+}
+
+.wrapper {
+    width: 380px;
+    max-width: 90%;
+    padding: 30px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+
+.wrapper h1 {
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 0px;
+}
+
+.input-box {
+    width: 100%;
+    margin-bottom: 0px;
+}
+
+.input-box input {
+    width: 100%;
+    height: 50px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 40px;
+    padding: 0 20px;
+    font-size: 16px;
+    color: #fff;
+    outline: none;
+}
+
+.input-box input::placeholder {
+    color: #fff;
+}
+
+.btn {
+    width: 100%;
+    height: 45px;
+    border: none;
+    border-radius: 40px;
+    background: #fff;
+    color: #777;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.btn:hover {
+    background: #f0f0f0;
+}
+
+/* ================= FLASH MESSAGES ================= */
+.flash-container, .wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.mensagem, .erro {
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    padding: 10px 15px;
+    margin: 0;
+    border-radius: 12px;
+    font-weight: 600;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    opacity: 1;
+    transition: opacity 0.4s ease, transform 0.3s ease;
+    background-color: white;
+}
+
+.mensagem.sucesso { color: green; }
+.erro { color: red; }
+
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .wrapper {
+    width: 420px;
+    max-width: 95%;
+    padding: 20px 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.wrapper h1 {
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 0; /* sem excesso de margem */
+}
+
+
+
+    .input-box input {
+        height: 45px;
+        font-size: 14px;
+        padding: 0 15px;
+    }
+
+    .btn {
+        height: 40px;
+        font-size: 14px;
+    }
+
+
+
+    .mensagem, .erro {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+}
+

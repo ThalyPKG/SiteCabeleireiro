@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Cabeleireiro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+</head>
+<body>
+    <!--Header e Navbar-->
+    <header>
+        
+        <nav class="navbar section-content">
+            <a href="#" class="nav-logo">
+                <h2 class="logo-text">Jefferson Cabeleireiro</h2>
+            </a>
+
+            <div class="menu-toggle" id="menu-toggle">☰</div>
+        
+            <ul class="nav-menu" id="nav-menu">  
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Sobre</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('agendamentos') }}" class="nav-link">Agendamentos</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Galeria</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/login" class="nav-link">Registro/Login</a>
+                </li>
+
+                {% if session.get('usuario_id') %}
+        <li class="nav-item">
+            <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+        </li>
+    {% else %}
+     
+    {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div id="menu-overlay"></div>
+
+
+    <main>
+        <!--Hero Section-->
+        <section class="hero-section">
+            <div class="section-content">
+                <div class="hero-details">
+                    <h2 class="title">mude o seu visual</h2>
+                    <h3 class="subtitle">Aumente sua autoestima com os melhores cortes da região</h3>
+                    <p class="description">Bem vindo ao nosso salão</p>
+                    <div class="buttons">
+                        <a href="/agendamento" class="button order-now">Agendar Agora</a>
+                        <a href="{{ url_for('contato') }}" class="button contact-us">Contate-nos</a>
+                    </div>
+                </div>
+                <div class="hero-image-wrapper">
+                    <img src="../static/img/jeff.png" alt="Hero" class="hero-image">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+</body>
+
+</html>

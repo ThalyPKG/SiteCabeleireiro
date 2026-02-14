@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depoimentos - Jefferson Cabeleireiro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <nav class="navbar section-content">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <h2 class="logo-text">Jefferson Cabeleireiro</h2>
+            </a>
+
+            <div class="menu-toggle" id="menu-toggle">☰</div>
+            
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('depoimentos') }}" class="nav-link">Depoimentos</a></li>
+                <li class="nav-item"><a href="{{ url_for('contato') }}" class="nav-link">Contatos</a></li>
+                <li class="nav-item"><a href="/login" class="nav-link">Registro/Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Seção de Depoimentos -->
+    <main>
+        <section id="depoimentos" class="depoimentos-section">
+            <div class="section-content">
+                <h2 class="section-title">Avaliações no Google</h2>
+                <p class="section-description">
+                    <!--avalição real-->
+                </p>
+
+                <div class="depoimentos-container">
+
+                    <!-- Review 1 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review1.png') }}" alt="Avaliação Google 1">
+                    </div>
+
+                    <!-- Review 2 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review2.png') }}" alt="Avaliação Google 2">
+                    </div>
+
+                    <!-- Review 3 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review3.png') }}" alt="Avaliação Google 3">
+                    </div>
+
+                    <!-- Review 4 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review4.png') }}" alt="Avaliação Google 4">
+                    </div>
+
+                    <!-- Review 5 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review5.png') }}" alt="Avaliação Google 5">
+                    </div>
+
+                    <!-- Review 6 -->
+                    <div class="depoimento-card">
+                        <img src="{{ url_for('static', filename='img/Review/review6.png') }}" alt="Avaliação Google 6">
+                    </div>
+
+                </div>
+
+                <div class="google-button">
+                    <a href="https://maps.app.goo.gl/837ojFhA7tW9fKjGA" target="_blank">
+                        Ver todas as avaliações no Google
+                    </a>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+</body>
+</html>

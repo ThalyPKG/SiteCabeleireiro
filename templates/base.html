@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meu Site{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar section-content">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <h2 class="logo-text">Jefferson Cabeleireiro</h2>
+            </a>
+
+            <div class="menu-toggle" id="menu-toggle">☰</div>
+        
+            <ul class="nav-menu" id="nav-menu">  
+                <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Sobre</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Depoimentos</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Galeria</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Contatos</a></li>
+
+                {% if session.get('usuario_id') %}
+                    <li class="nav-item"><a href="{{ url_for('agendamento') }}" class="nav-link">Agendamentos</a></li>
+                    <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>
+                {% else %}
+                    <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Registro/Login</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Flash mensagens -->
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for categoria, mensagem in messages %}
+                <div class="mensagem {{ categoria }}">{{ mensagem }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Conteúdo principal -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

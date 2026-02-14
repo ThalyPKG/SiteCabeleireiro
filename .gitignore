@@ -1,0 +1,13 @@
+# Ambiente virtual
+venv/
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Banco local
+*.db
+
+# Configurações sensíveis
+config.py

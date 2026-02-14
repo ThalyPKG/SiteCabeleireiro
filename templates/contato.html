@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contato</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/contato.css') }}">
+</head>
+<body>
+
+<div class="contato-container">
+
+  <h1>Contato</h1>
+  <p>Entre em contato conosco pelo telefone ou email:</p>
+
+  <div class="info">
+    <div class="item">
+      <span class="label">Email:</span>
+      <a href="mailto:thalysondasilvaribeiro@gmail.com">thalysondasilvaribeiro@gmail.com</a>
+    </div>
+    <div class="item">
+      <span class="label">Telefone:</span>
+      <a href="tel:+5511933795508">(11) 93379-5508</a>
+    </div>
+  </div>
+
+<form class="form-contato" method="POST" action="{{ url_for('contato') }}">
+    <input type="text" name="nome" placeholder="Seu nome" required>
+    <input type="email" name="email" placeholder="Seu email" required>
+    <textarea name="mensagem" placeholder="Sua mensagem" required></textarea>
+    <button type="submit">Enviar Mensagem</button>
+</form>
+
+
+</div>
+
+</body>
+</html>

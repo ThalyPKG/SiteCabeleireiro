@@ -1,0 +1,99 @@
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #0f172a;
+    color: #fff;
+}
+
+.contato-container {
+    max-width: 450px;
+    width: 90%; /* Ajuste para telas pequenas */
+    margin: 30px auto;
+    padding: 20px;
+    background: #1e293b;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    overflow: hidden; /* Evita scroll interno */
+}
+
+.contato-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #38bdf8;
+}
+
+.contato-container p {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #cbd5e1;
+}
+
+.info {
+    margin-bottom: 30px;
+}
+
+.item {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.item .label {
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 4px;
+}
+
+.item a {
+    color: #fff;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.item a:hover {
+    color: #38bdf8;
+}
+
+
+.form-contato input,
+.form-contato textarea {
+    width: 100%;
+    box-sizing: border-box; /* garante que padding não quebre layout */
+    font-size: 16px;
+}
+
+.form-contato textarea {
+    resize: none;
+    min-height: 100px;
+}
+
+.form-contato button {
+    width: 100%;
+    padding: 12px;
+    background: #38bdf8;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.form-contato button:hover {
+    background: #0ea5e9;
+}
+
+/* Responsivo para celular */
+@media (max-width: 500px) {
+    .contato-container {
+        padding: 15px;
+        margin: 20px 10px; /* deixa pequenas margens nas laterais */
+    }
+
+    .form-contato input,
+    .form-contato textarea,
+    .form-contato button {
+        font-size: 16px;
+        padding: 12px;
+    }
+}

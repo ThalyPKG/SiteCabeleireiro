@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamento</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/agendamento.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <form method="POST" action="{{ url_for('agendamento') }}">
+
+  <h1>Agendar Horário</h1>
+
+  <!-- SERVIÇOS -->
+  <div class="section">
+    <h2>Escolha os serviços</h2>
+    <div class="services">
+
+<label class="service-card" data-price="38">
+  <input type="checkbox" name="servicos" value="Corte de Cabelo">
+  <span>Corte de Cabelo - R$38</span>
+</label>
+
+<label class="service-card" data-price="16">
+  <input type="checkbox" name="servicos" value="Gel">
+  <span>Gel - R$16</span>
+</label>
+
+<label class="service-card" data-price="16">
+  <input type="checkbox" name="servicos" value="Cera Modeladora">
+  <span>Cera Modeladora - R$16</span>
+</label>
+
+
+
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total">
+    Total: R$ <span id="totalValue">0</span>
+    <input type="hidden" name="total" id="totalInput">
+  </div>
+
+  <!-- DATA -->
+  <div class="section">
+    <h2>Escolha a data</h2>
+    <input type="date" name="data" id="data" required>
+    <p id="msgData" class="msg"></p>
+  </div>
+
+  <!-- HORÁRIO -->
+  <div class="section">
+    <h2>Horários disponíveis</h2>
+
+    <input type="hidden" name="horario" id="horarioSelecionado">
+    <div class="horarios" id="horarios" data-ocupados='{{ horarios_ocupados|tojson | safe }}'></div>
+
+  </div>
+
+  <!-- TELEFONE -->
+  <input type="tel" name="telefone" id="telefone" placeholder="(11) 91234-5678" required>
+
+  <!-- BOTÃO -->
+  <button type="submit" class="btn-confirmar">
+    Confirmar Agendamento
+  </button>
+
+</form>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/agendamento.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Meus Agendamentos</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/navbar.css">
+  <link rel="stylesheet" href="/static/css/agendamentos.css">
+</head>
+
+<body>
+<header>
+    
+        
+        <nav class="navbar section-content">
+            <a href="#" class="nav-logo">
+                <h2 class="logo-text">Jefferson Cabeleireiro</h2>
+            </a>
+
+            <div class="menu-toggle" id="menu-toggle">☰</div>
+        
+            <ul class="nav-menu" id="nav-menu">  
+                <li class="nav-item">
+                    <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Sobre</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('agendamentos') }}" class="nav-link">Agendamentos</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Galeria</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Contatos</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/login" class="nav-link">Registro/Login</a>
+                </li>
+
+                {% if session.get('usuario_id') %}
+        <li class="nav-item">
+            <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+        </li>
+    {% else %}
+     
+    {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+<div id="menu-overlay"></div>
+
+<section class="meus-agendamentos">
+  <h2>Meus Agendamentos</h2>
+
+  {% if agendamentos %}
+    <div class="lista-agendamentos">
+      {% for ag in agendamentos %}
+        <div class="card-agendamento">
+          <p><strong>📅 Data:</strong> {{ ag.data.strftime("%d/%m/%Y") }}</p>
+          <p><strong>⏰ Horário:</strong> {{ ag.horario }}</p>
+          <p><strong>✂️ Serviços:</strong> {{ ag.servicos }}</p>
+          <p><strong>💰 Total:</strong> R$ {{ ag.total }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Você ainda não possui agendamentos.</p>
+  {% endif %}
+</section>
+
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: url('../img/background.png') no-repeat;
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 20px;
+}
+
+
+
+.container {
+  max-width: 500px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 22px;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* SERVIÇOS */
+
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.service-card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: 0.2s ease;
+}
+
+.service-card:hover {
+  transform: scale(1.02);
+}
+
+.service-card.active {
+  background: #16a34a; /* verde */
+  border-color: #22c55e;
+  color: white;
+}
+
+.service-card input {
+  display: none;
+}
+
+/* TOTAL */
+
+.total {
+  background: #0f172a;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+/* INPUT DATA */
+
+input[type="date"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+}
+
+.msg {
+  color: #f87171;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* HORÁRIOS */
+
+.horarios {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.horario-btn {
+  background: #1e293b;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.horario-btn.active {
+  background: #2563eb;
+}
+
+/* BOTÃO */
+
+.btn-confirmar {
+  width: 100%;
+  padding: 15px;
+  background: #2563eb;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+
+/* css do menu agendamentos marcados */
+
+/* ================= AGENDAMENTOS CLIENTE ================= */
+
+
+.meus-agendamentos {
+  padding-top: 120px; /* espaço para navbar fixa */
+  max-width: 900px;
+  margin: auto;
+}
+
+/* ================= CARDS AGENDAMENTOS ================= */
+
+.lista-agendamentos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-agendamento {
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+  transition: 0.3s;
+}
+
+.card-agendamento:hover {
+  transform: translateY(-4px);
+  border-color: #c9a227;
+}
+
+.card-agendamento p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.card-agendamento strong {
+  color: #c9a227;
+}
+
+.meus-agendamentos h2 {
+  text-align: center;
+  margin-bottom: 25px;
+}
