@@ -377,9 +377,12 @@ def api_horarios(data):
     resultados = cursor.fetchall()
 
     horarios = [
-        str(r["horario"])[:5]
-        for r in resultados if r["horario"]
-    ]
+    r["horario"].strftime("%H:%M")
+    if hasattr(r["horario"], "strftime")
+    else str(r["horario"])[:5]
+    for r in resultados if r["horario"]
+]
+
 
     cursor.close()
     db.close()
