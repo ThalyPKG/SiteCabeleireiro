@@ -36,18 +36,19 @@ mail = Mail(app)
 
 # CONEXÃO BANCO LOGIN
 db_login = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="sistema_login"
+    host=os.getenv("MYSQLHOST"),
+    user=os.getenv("MYSQLUSER"),
+    password=os.getenv("MYSQLPASSWORD"),
+    database=os.getenv("MYSQLDATABASE"),
+    port=int(os.getenv("MYSQLPORT"))
 )
 
-# CONEXÃO BANCO SALÃO
 db_salao = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="salao"
+    host=os.getenv("MYSQLHOST"),
+    user=os.getenv("MYSQLUSER"),
+    password=os.getenv("MYSQLPASSWORD"),
+    database=os.getenv("MYSQLDATABASE"),
+    port=int(os.getenv("MYSQLPORT"))
 )
 
 # Funções de validação
@@ -67,7 +68,7 @@ def senha_valida(senha):
 # ROTAS
 
 @app.route("/")
-def home():
+def index():
     return redirect("/index")
 
 @app.route("/index")
