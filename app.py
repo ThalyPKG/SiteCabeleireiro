@@ -9,7 +9,6 @@ import os
 import re
 import secrets
 import hashlib
-import requests
 
 load_dotenv()
 
@@ -25,8 +24,7 @@ app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = ("Jefferson Cabeleireiro",
-                                     os.getenv("MAIL_USERNAME"))
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 
 mail = Mail(app)
 ADMIN_EMAIL = os.getenv("MAIL_USERNAME")
@@ -382,18 +380,35 @@ def api_horarios(data):
 
     resultados = cursor.fetchall()
 
-    horarios = [
-    r["horario"].strftime("%H:%M")
-    if hasattr(r["horario"], "strftime")
-    else str(r["horario"])[:5]
-    for r in resultados if r["horario"]
-]
+    horarios = []
 
+    for r in resultados:
+        h = r["horario"]
+
+        if not h:
+            continue
+
+        # 🔥 caso seja timedelta
+        if isinstance(h, timedelta):
+            total_minutes = h.seconds // 60
+            horas = total_minutes // 60
+            minutos = total_minutes % 60
+            horarios.append(f"{horas:02d}:{minutos:02d}")
+
+        # 🔥 caso seja time normal
+        elif hasattr(h, "strftime"):
+            horarios.append(h.strftime("%H:%M"))
+
+        # 🔥 fallback
+        else:
+            horarios.append(str(h)[:5])
 
     cursor.close()
     db.close()
 
     return jsonify(horarios)
+
+
 
     #esqueceu senha
 
@@ -492,38 +507,23 @@ def redefinir_senha(token):
 
     return render_template("redefinir-senha.html")
 
-def enviar_email(destino, assunto, mensagem):
-
-    return requests.post(
-        f"https://api.mailgun.net/v3/{os.getenv('MAILGUN_DOMAIN')}/messages",
-        auth=("api", os.getenv("MAILGUN_API_KEY")),
-        data={
-            "from": f"Mailgun Sandbox <postmaster@{os.getenv('MAILGUN_DOMAIN')}>",
-            "to": destino,
-            "subject": assunto,
-            "text": mensagem
-        }
-    )
-
 @app.route("/sobre")
 def sobre():
     return render_template("sobre.html")
 
 def enviar_email(destino, assunto, mensagem):
+    try:
+        msg = Message(
+            subject=assunto,
+            recipients=[destino],
+            body=mensagem
+        )
+        mail.send(msg)
+        print("Email enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar email:", e)
 
-    requests.post(
-        "https://api.resend.com/emails",
-        headers={
-            "Authorization": f"Bearer {os.getenv('RESEND_API_KEY')}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "from": "onboarding@resend.dev",
-            "to": destino,
-            "subject": assunto,
-            "text": mensagem,
-        },
-    )
+
 
 
 

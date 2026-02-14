@@ -81,7 +81,9 @@ dataInput.addEventListener("change", async () => {
     btn.classList.add("horario-btn");
     btn.textContent = h;
 
-    if (horariosOcupados.includes(h)) {
+    const ocupado = horariosOcupados.some(hOcupado => hOcupado.slice(0,5) === h);
+
+    if (ocupado) {
         btn.classList.add("ocupado");
         btn.style.backgroundColor = "grey";
         btn.style.cursor = "not-allowed";
