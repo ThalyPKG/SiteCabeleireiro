@@ -9,6 +9,7 @@ import os
 import re
 import secrets
 import hashlib
+import requests
 
 load_dotenv()
 
@@ -442,7 +443,7 @@ Caso não tenho sido você, ignora esse email!
 
 
 
-        mail.send(msg)
+        enviar_email(email, "Redefinição de senha", msg.body)
 
         flash("Email enviado! Verifique sua caixa.", "sucesso")
         return redirect("/login")
@@ -491,6 +492,23 @@ def redefinir_senha(token):
         return redirect("/login")
 
     return render_template("redefinir-senha.html")
+
+def enviar_email(destino, assunto, mensagem):
+
+    return requests.post(
+        f"https://api.mailgun.net/v3/{os.getenv('MAILGUN_DOMAIN')}/messages",
+        auth=("api", os.getenv("MAILGUN_API_KEY")),
+        data={
+            "from": f"Mailgun Sandbox <postmaster@{os.getenv('MAILGUN_DOMAIN')}>",
+            "to": destino,
+            "subject": assunto,
+            "text": mensagem
+        }
+    )
+
+@app.route("/sobre")
+def sobre():
+    return render_template("sobre.html")
 
 
 if __name__ == "__main__":

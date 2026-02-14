@@ -1,0 +1,104 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    padding: 40px 15px;
+}
+
+/* CONTAINER */
+.sobre-container {
+    max-width: 800px;
+    width: 100%;
+    background: #1c1c1c;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+/* TITULO */
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #f5c542;
+    font-size: 34px;
+}
+
+/* TEXTO */
+p {
+    font-size: 18px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    text-align: justify;
+}
+
+/* BOTÃO */
+.btn-voltar {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 12px 25px;
+    background: #f5c542;
+    color: #111;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.btn-voltar:hover {
+    background: #ffda66;
+}
+
+/* ========================= */
+/* 📱 RESPONSIVO CELULAR */
+/* ========================= */
+
+@media (max-width: 768px) {
+
+    .sobre-container {
+        padding: 25px;
+        border-radius: 10px;
+    }
+
+    h1 {
+        font-size: 26px;
+        margin-bottom: 18px;
+    }
+
+    p {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .btn-voltar {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    body {
+        padding: 20px 10px;
+    }
+
+    .sobre-container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    p {
+        font-size: 15px;
+    }
+}
