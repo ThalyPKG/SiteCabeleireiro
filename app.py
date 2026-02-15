@@ -201,6 +201,200 @@ def confirmacao(id):
     ag["horario"] = str(ag["horario"])[:5] if ag.get("horario") else "—"
     return render_template("confirmacao.html", agendamento=ag)
 
-# ================== RODAR ==================
+@app.route("/contato", methods=["GET", "POST"])
+def contato():
+    if request.method == "POST":
+        nome = request.form.get("nome")
+        email = request.form.get("email")
+        mensagem = request.form.get("mensagem")
+
+        msg = Message(
+            subject=f"Nova mensagem de contato de {nome}",
+            recipients=["thalysondasilvaribeiro@gmail.com"]
+        )
+
+        msg.body = f"Nome: {nome}\nEmail: {email}\nMensagem: {mensagem}"
+        enviar_email(
+            "thalysondasilvaribeiro@gmail.com",
+            f"Nova mensagem de contato de {nome}",
+            msg.body
+        )
+
+
+        flash("Mensagem enviada com sucesso!", "sucesso")
+        return redirect(url_for("index"))
+
+    return render_template("contato.html")
+
+@app.route("/api/horarios/<data>")
+def api_horarios(data):
+
+    db = get_db_salao()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT horario FROM agendamentos
+        WHERE data=%s
+    """, (data,))
+
+    resultados = cursor.fetchall()
+
+    horarios = []
+
+    for r in resultados:
+        h = r["horario"]
+
+        if not h:
+            continue
+
+        if isinstance(h, timedelta):
+            total_minutes = h.seconds // 60
+            horas = total_minutes // 60
+            minutos = total_minutes % 60
+            horarios.append(f"{horas:02d}:{minutos:02d}")
+
+        elif hasattr(h, "strftime"):
+            horarios.append(h.strftime("%H:%M"))
+
+        else:
+            horarios.append(str(h)[:5])
+
+    cursor.close()
+    db.close()
+
+    return jsonify(horarios)
+
+
+
+@app.route("/esqueceu-senha", methods=["GET","POST"])
+def esqueceu_senha():
+
+    if request.method == "POST":
+
+        email = request.form.get("email")
+
+        db = get_db_login()
+        cursor = db.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuario WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        cursor.close()
+        db.close()
+
+        if not user:
+            flash("Email não encontrado", "erro")
+            return redirect("/esqueceu-senha")
+
+        token = serializer.dumps(email, salt="reset-senha")
+
+        link = f"{os.getenv('BASE_URL')}{url_for('redefinir_senha', token=token)}"
+
+
+        msg = Message(
+            subject="Redefinição de senha",
+            recipients=[email]
+        )
+
+        msg.body = f"""
+Olá!
+
+Clique no link abaixo para redefinir sua senha:
+
+{link}
+
+Esse link expira em 15 minutos.
+
+Caso não tenho sido você, ignora esse email!
+"""
+
+
+
+        enviar_email(email, "Redefinição de senha", msg.body)
+
+        flash("Email enviado! Verifique sua caixa.", "sucesso")
+        return redirect("/login")
+
+    return render_template("esqueceu-senha.html")
+
+
+@app.route("/redefinir-senha/<token>", methods=["GET","POST"])
+def redefinir_senha(token):
+
+    try:
+        email = serializer.loads(
+            token,
+            salt="reset-senha",
+            max_age=900
+        )
+    except:
+        flash("Link inválido ou expirado", "erro")
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        nova_senha = request.form.get("senha")
+
+        if not senha_valida(nova_senha):
+            flash("Senha fraca", "erro")
+            return redirect(request.url)
+
+        senha_hash = generate_password_hash(nova_senha)
+
+        db = get_db_login()
+        cursor = db.cursor()
+
+        cursor.execute("""
+            UPDATE usuario
+            SET senha=%s
+            WHERE email=%s
+        """, (senha_hash, email))
+
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        flash("Senha redefinida com sucesso!", "sucesso")
+        return redirect("/login")
+
+    return render_template("redefinir-senha.html")
+
+@app.route("/sobre")
+def sobre():
+    return render_template("sobre.html")
+
+from threading import Thread
+
+from sib_api_v3_sdk import Configuration, ApiClient
+from sib_api_v3_sdk.api import transactional_emails_api
+from sib_api_v3_sdk.models import SendSmtpEmail
+import os
+
+def enviar_email(destinatario, assunto, mensagem):
+    configuration = Configuration()
+    configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+
+    api_client = ApiClient(configuration)
+    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+
+    email = SendSmtpEmail(
+        to=[{"email": destinatario}],
+        subject=assunto,
+        html_content=f"<html><body><p>{mensagem}</p></body></html>",
+        sender={"name": "Jefferson Cabeleireiro", "email": "thalysondasilvaribeiro@gmail.com"}
+    )
+
+    try:
+        api_instance.send_transac_email(email)
+        print("Email enviado com sucesso!")
+    except Exception as e:
+        print("Erro ao enviar:", e)
+
+
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
