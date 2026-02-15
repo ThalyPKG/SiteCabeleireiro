@@ -1,23 +1,20 @@
-from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
+from flask import Flask, render_template, request, redirect, session, flash, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import mysql.connector
 import os
 import re
-from itsdangerous import URLSafeTimedSerializer
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# ================== CONFIGURAÇÕES ==================
+# ================== CONFIGURAÇÃO ==================
 app.secret_key = os.getenv("SECRET_KEY") or "chave_teste_fixa"
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
-serializer = URLSafeTimedSerializer(app.secret_key)
-
-# ================== FUNÇÕES DE BANCO ==================
+# ================== BANCO DE DADOS ==================
 def get_db_login():
     return mysql.connector.connect(
         host=os.getenv("DB_LOGIN_HOST") or "127.0.0.1",
@@ -36,27 +33,22 @@ def get_db_salao():
         port=int(os.getenv("DB_SALAO_PORT", 3306))
     )
 
-# ================== VALIDAÇÕES ==================
+# ================== VALIDAÇÃO ==================
 def email_valido(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def senha_valida(senha):
     return len(senha) >= 5 and any(c.isupper() for c in senha) and any(c.islower() for c in senha)
 
-# ================== ROTAS PÚBLICAS ==================
+# ================== ROTAS ==================
 @app.route("/")
 def home():
-    return redirect(url_for("index"))
+    return render_template("index.html")
 
 @app.route("/index")
 def index():
     return render_template("index.html")
 
-@app.route("/sobre")
-def sobre():
-    return render_template("sobre.html")
-
-# ================== REGISTRO ==================
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
@@ -90,7 +82,6 @@ def registro():
 
     return render_template("registro.html")
 
-# ================== LOGIN ==================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -121,11 +112,10 @@ def logout():
     flash("Logout realizado", "sucesso")
     return redirect("/login")
 
-# ================== AGENDAMENTO ==================
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
-    if "usuario_id" not in session or "email" not in session:
-        flash("Você precisa estar logado para agendar", "erro")
+    if "usuario_id" not in session:
+        flash("Faça login primeiro", "erro")
         return redirect("/login")
 
     db = get_db_salao()
@@ -156,10 +146,10 @@ def agendamento():
         agendamento_id = cursor.lastrowid
         cursor.close()
         db.close()
-        flash("Agendamento realizado com sucesso!", "sucesso")
-        return redirect(url_for("confirmacao", id=agendamento_id))
+        flash("Agendamento realizado!", "sucesso")
+        return redirect(f"/confirmacao/{agendamento_id}")
 
-    # GET: Pega horários ocupados
+    # GET: horários ocupados
     cursor.execute("SELECT data, horario FROM agendamentos")
     ocupados = cursor.fetchall()
     cursor.close()
@@ -168,37 +158,33 @@ def agendamento():
     horarios_ocupados = {}
     for ag in ocupados:
         data_str = ag["data"].strftime("%Y-%m-%d") if hasattr(ag["data"], "strftime") else str(ag["data"])
-        hora_str = ag["horario"].strftime("%H:%M") if hasattr(ag["horario"], "strftime") else str(ag["horario"])[:5]
+        hora_str = str(ag["horario"])[:5]
         if data_str not in horarios_ocupados:
             horarios_ocupados[data_str] = []
         horarios_ocupados[data_str].append(hora_str)
 
     return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
 
-# ================== LISTA DE AGENDAMENTOS ==================
 @app.route("/agendamentos")
 def agendamentos():
     if "usuario_id" not in session:
-        flash("Você precisa estar logado para ver seus agendamentos", "erro")
+        flash("Faça login primeiro", "erro")
         return redirect("/login")
 
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
-    usuario_id = session["usuario_id"]
-
     cursor.execute("SELECT id, data, horario, servicos, total, telefone, email "
-                   "FROM agendamentos WHERE usuario_id=%s ORDER BY data DESC, horario DESC", (usuario_id,))
+                   "FROM agendamentos WHERE usuario_id=%s ORDER BY data DESC, horario DESC",
+                   (session["usuario_id"],))
     lista = cursor.fetchall()
     cursor.close()
     db.close()
 
-    # Formata horário
     for ag in lista:
         ag["horario"] = str(ag["horario"])[:5] if ag.get("horario") else "—"
 
     return render_template("agendamentos.html", agendamentos=lista)
 
-# ================== CONFIRMAÇÃO ==================
 @app.route("/confirmacao/<int:id>")
 def confirmacao(id):
     db = get_db_salao()
@@ -215,6 +201,6 @@ def confirmacao(id):
     ag["horario"] = str(ag["horario"])[:5] if ag.get("horario") else "—"
     return render_template("confirmacao.html", agendamento=ag)
 
-# ================== RODAR APP ==================
+# ================== RODAR ==================
 if __name__ == "__main__":
     app.run(debug=True)
