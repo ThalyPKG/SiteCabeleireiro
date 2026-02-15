@@ -488,18 +488,30 @@ def sobre():
 
 from threading import Thread
 
-def enviar_email(destino, assunto, mensagem):
+from sib_api_v3_sdk import Configuration, ApiClient
+from sib_api_v3_sdk.api import transactional_emails_api
+from sib_api_v3_sdk.models import SendSmtpEmail
+import os
+
+def enviar_email(destinatario, assunto, mensagem):
+    configuration = Configuration()
+    configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+
+    api_client = ApiClient(configuration)
+    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+
+    email = SendSmtpEmail(
+        to=[{"email": destinatario}],
+        subject=assunto,
+        html_content=f"<html><body><p>{mensagem}</p></body></html>",
+        sender={"name": "Jefferson Cabeleireiro", "email": "thalysondasilvaribeiro@gmail.com"}
+    )
+
     try:
-        msg = Message(
-            subject=assunto,
-            recipients=[destino],
-            body=mensagem
-        )
-        mail.send(msg)
+        api_instance.send_transac_email(email)
         print("Email enviado com sucesso!")
     except Exception as e:
-        print("Erro ao enviar email:", e)
-
+        print("Erro ao enviar:", e)
 
 
 
