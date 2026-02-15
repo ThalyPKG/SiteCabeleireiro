@@ -156,126 +156,144 @@ def logout():
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
-    if "usuario_id" not in session:
+    if "usuario_id" not in session or "email" not in session:
+        flash("Você precisa estar logado para agendar", "erro")
         return redirect("/login")
 
-    db = get_db_salao()
-    cursor = db.cursor(dictionary=True)
+    try:
+        db = get_db_salao()
+        cursor = db.cursor(dictionary=True)
 
-    if request.method == "POST":
-        data = request.form.get("data")
-        horario = request.form.get("horario")
-        telefone = request.form.get("telefone")
-        servicos = request.form.getlist("servicos")
-        total = request.form.get("total")
+        if request.method == "POST":
+            # Recebe dados do formulário
+            data = request.form.get("data")
+            horario = request.form.get("horario")
+            telefone = request.form.get("telefone")
+            servicos = request.form.getlist("servicos")
+            total = request.form.get("total")
 
-        if not data or not horario or not telefone or not servicos:
-            flash("Preencha todos os campos", "erro")
-            return redirect("/agendamento")
+            # Valida campos obrigatórios
+            if not data or not horario or not telefone or not servicos or not total:
+                flash("Preencha todos os campos", "erro")
+                return redirect("/agendamento")
 
-        # Verifica se horário já reservado
-        cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
-        if cursor.fetchone():
-            flash("Horário já reservado", "erro")
-            return redirect("/agendamento")
+            # Verifica se horário já reservado
+            cursor.execute(
+                "SELECT id FROM agendamentos WHERE data=%s AND horario=%s",
+                (data, horario)
+            )
+            if cursor.fetchone():
+                flash("Horário já reservado", "erro")
+                return redirect("/agendamento")
 
-        # Salva agendamento
-        cursor.execute("""
-            INSERT INTO agendamentos
-            (usuario_id, data, horario, servicos, total, telefone, email)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
-            session["usuario_id"],
-            data,
-            horario,
-            ", ".join(servicos),
-            total,
-            telefone,
-            session["email"]
-        ))
-        db.commit()
-        agendamento_id = cursor.lastrowid
+            # Salva agendamento
+            cursor.execute("""
+                INSERT INTO agendamentos
+                (usuario_id, data, horario, servicos, total, telefone, email)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                session["usuario_id"],
+                data,
+                horario,
+                ", ".join(servicos),
+                total,
+                telefone,
+                session["email"]
+            ))
+            db.commit()
+            agendamento_id = cursor.lastrowid
 
-        # Formata data para e-mail
-        try:
-            data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
-        except:
-            data_formatada = data
+            # Formata data para email
+            try:
+                data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
+            except Exception:
+                data_formatada = data
 
-        mensagem_cliente = f"""
+            mensagem_cliente = f"""
 Olá!
 
 Seu agendamento foi confirmado ✅
 
 📅 Data: {data_formatada}
 ⏰ Horário: {horario}
-💇 Serviços: {", ".join(servicos)}
+💇 Serviços: {', '.join(servicos)}
 💰 Total: R$ {total}
 📞 Telefone: {telefone}
 """
-        enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
+            try:
+                enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
+            except Exception as e:
+                print("Erro ao enviar email cliente:", e)
 
-        mensagem_admin = f"""
+            mensagem_admin = f"""
 NOVO AGENDAMENTO RECEBIDO
 
-Cliente: {session["email"]}
+Cliente: {session['email']}
 Telefone: {telefone}
 
 Data: {data_formatada}
 Horário: {horario}
-Serviços: {", ".join(servicos)}
+Serviços: {', '.join(servicos)}
 Total: R$ {total}
 """
-        enviar_email(ADMIN_EMAIL, "Novo agendamento recebido", mensagem_admin)
+            try:
+                enviar_email(ADMIN_EMAIL, "Novo agendamento recebido", mensagem_admin)
+            except Exception as e:
+                print("Erro ao enviar email admin:", e)
+
+            flash("Agendamento realizado com sucesso!", "sucesso")
+            return redirect(url_for("confirmacao", id=agendamento_id))
+
+        # GET: pega horários já ocupados
+        cursor.execute("SELECT data, horario FROM agendamentos")
+        ocupados_db = cursor.fetchall()
+        horarios_ocupados = {}
+
+        for ag in ocupados_db:
+            data_obj = ag.get("data")
+            horario_obj = ag.get("horario")
+
+            if not data_obj or not horario_obj:
+                continue
+
+            # Data como string
+            if hasattr(data_obj, "strftime"):
+                data_str = data_obj.strftime("%Y-%m-%d")
+            else:
+                data_str = str(data_obj)
+
+            # Horário como string
+            hora_str = None
+            if isinstance(horario_obj, timedelta):
+                total_minutos = horario_obj.seconds // 60
+                h = total_minutos // 60
+                m = total_minutos % 60
+                hora_str = f"{h:02d}:{m:02d}"
+            elif hasattr(horario_obj, "strftime"):
+                hora_str = horario_obj.strftime("%H:%M")
+            else:
+                hora_str = str(horario_obj)[:5]
+
+            if data_str not in horarios_ocupados:
+                horarios_ocupados[data_str] = []
+
+            if hora_str:
+                horarios_ocupados[data_str].append(hora_str)
+
+        # Ordena horários: mais recentes no topo
+        for dia in horarios_ocupados:
+            horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
 
         cursor.close()
         db.close()
-        return redirect(url_for("confirmacao", id=agendamento_id))
 
-    # GET: pega horários já ocupados
-    cursor.execute("SELECT data, horario FROM agendamentos")
-    ocupados_db = cursor.fetchall()
-    horarios_ocupados = {}
+        return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
 
-    for ag in ocupados_db:
-        data_obj = ag.get("data")
-        horario_obj = ag.get("horario")
+    except Exception as e:
+        print("Erro na rota /agendamento:", e)
+        flash("Ocorreu um erro interno. Tente novamente.", "erro")
+        return redirect("/agendamento")
 
-        if not data_obj or not horario_obj:
-            continue
-
-        # transforma data em string
-        if hasattr(data_obj, "strftime"):
-            data_str = data_obj.strftime("%Y-%m-%d")
-        else:
-            data_str = str(data_obj)
-
-        # transforma horário em string
-        if isinstance(horario_obj, timedelta):
-            total_minutos = horario_obj.seconds // 60
-            h = total_minutos // 60
-            m = total_minutos % 60
-            hora_str = f"{h:02d}:{m:02d}"
-        elif hasattr(horario_obj, "strftime"):
-            hora_str = horario_obj.strftime("%H:%M")
-        else:
-            hora_str = str(horario_obj)[:5]
-
-        if data_str not in horarios_ocupados:
-            horarios_ocupados[data_str] = []
-
-        horarios_ocupados[data_str].append(hora_str)
-
-    # Ordena horários de cada dia: mais recentes no topo
-    for dia in horarios_ocupados:
-        horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
-
-    cursor.close()
-    db.close()
-
-    return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
-
-  
 @app.route("/confirmacao/<int:id>")
 def confirmacao(id):
 
