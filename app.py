@@ -403,7 +403,6 @@ def api_horarios(data):
 
 
 
-
 @app.route("/esqueceu-senha", methods=["GET","POST"])
 def esqueceu_senha():
 
