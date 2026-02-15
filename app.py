@@ -1,36 +1,23 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from flask_mail import Mail, Message
 from dotenv import load_dotenv
-from itsdangerous import URLSafeTimedSerializer
 import mysql.connector
 import os
 import re
-import secrets
-import hashlib
+from itsdangerous import URLSafeTimedSerializer
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
+
+# ================== CONFIGURAÇÕES ==================
+app.secret_key = os.getenv("SECRET_KEY") or "chave_teste_fixa"
 app.config["PROPAGATE_EXCEPTIONS"] = True
-
-
-app.config["MAIL_SERVER"] = "smtp-relay.brevo.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
-
-mail = Mail(app)
-ADMIN_EMAIL = os.getenv("MAIL_USERNAME")
 
 serializer = URLSafeTimedSerializer(app.secret_key)
 
-
-
+# ================== FUNÇÕES DE BANCO ==================
 def get_db_login():
     return mysql.connector.connect(
         host=os.getenv("DB_LOGIN_HOST") or "127.0.0.1",
@@ -39,7 +26,6 @@ def get_db_login():
         database=os.getenv("DB_LOGIN_NAME"),
         port=int(os.getenv("DB_LOGIN_PORT", 3306))
     )
-
 
 def get_db_salao():
     return mysql.connector.connect(
@@ -50,39 +36,32 @@ def get_db_salao():
         port=int(os.getenv("DB_SALAO_PORT", 3306))
     )
 
-
-
-
+# ================== VALIDAÇÕES ==================
 def email_valido(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
-
 def senha_valida(senha):
-    return (
-        len(senha) >= 5 and
-        any(c.isupper() for c in senha) and
-        any(c.islower() for c in senha)
-    )
+    return len(senha) >= 5 and any(c.isupper() for c in senha) and any(c.islower() for c in senha)
 
-
-
+# ================== ROTAS PÚBLICAS ==================
 @app.route("/")
 def home():
     return redirect(url_for("index"))
-
 
 @app.route("/index")
 def index():
     return render_template("index.html")
 
+@app.route("/sobre")
+def sobre():
+    return render_template("sobre.html")
 
-
+# ================== REGISTRO ==================
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
-
-        email = request.form["email"]
-        senha = request.form["senha"]
+        email = request.form.get("email")
+        senha = request.form.get("senha")
 
         if not email_valido(email):
             flash("Email inválido", "erro")
@@ -94,57 +73,47 @@ def registro():
 
         db = get_db_login()
         cursor = db.cursor(dictionary=True)
-
         cursor.execute("SELECT * FROM usuario WHERE email=%s", (email,))
         if cursor.fetchone():
             flash("Email já cadastrado", "erro")
+            cursor.close()
+            db.close()
             return redirect("/registro")
 
         senha_hash = generate_password_hash(senha)
-
-        cursor.execute(
-            "INSERT INTO usuario (email, senha) VALUES (%s,%s)",
-            (email, senha_hash)
-        )
+        cursor.execute("INSERT INTO usuario (email, senha) VALUES (%s,%s)", (email, senha_hash))
         db.commit()
-
         cursor.close()
         db.close()
-
+        flash("Cadastro realizado com sucesso!", "sucesso")
         return redirect("/login")
 
     return render_template("registro.html")
 
-
-
+# ================== LOGIN ==================
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-        email = request.form["email"]
-        senha = request.form["senha"]
+        email = request.form.get("email")
+        senha = request.form.get("senha")
 
         db = get_db_login()
         cursor = db.cursor(dictionary=True)
-
         cursor.execute("SELECT * FROM usuario WHERE email=%s", (email,))
         user = cursor.fetchone()
-
         cursor.close()
         db.close()
 
         if user and check_password_hash(user["senha"], senha):
             session["usuario_id"] = user["codigo"]
             session["email"] = user["email"]
-
-            flash("Login realizado!", "sucesso")
+            flash("Login realizado com sucesso!", "sucesso")
             return redirect("/index")
-
-        flash("Email ou senha inválidos", "erro")
-        return redirect("/login")
+        else:
+            flash("Email ou senha inválidos", "erro")
+            return redirect("/login")
 
     return render_template("login.html")
-
 
 @app.route("/logout")
 def logout():
@@ -152,395 +121,100 @@ def logout():
     flash("Logout realizado", "sucesso")
     return redirect("/login")
 
-
-
+# ================== AGENDAMENTO ==================
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
     if "usuario_id" not in session or "email" not in session:
         flash("Você precisa estar logado para agendar", "erro")
         return redirect("/login")
 
-    try:
-        db = get_db_salao()
-        cursor = db.cursor(dictionary=True)
-
-        if request.method == "POST":
-            # Recebe dados do formulário
-            data = request.form.get("data")
-            horario = request.form.get("horario")
-            telefone = request.form.get("telefone")
-            servicos = request.form.getlist("servicos")
-            total = request.form.get("total")
-
-            # Valida campos obrigatórios
-            if not data or not horario or not telefone or not servicos or not total:
-                flash("Preencha todos os campos", "erro")
-                return redirect("/agendamento")
-
-            # Verifica se horário já reservado
-            cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
-            if cursor.fetchone():
-                flash("Horário já reservado", "erro")
-                return redirect("/agendamento")
-
-            # Salva agendamento
-            cursor.execute("""
-                INSERT INTO agendamentos
-                (usuario_id, data, horario, servicos, total, telefone, email)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                session["usuario_id"],
-                data,
-                horario,
-                ", ".join(servicos),
-                total,
-                telefone,
-                session["email"]
-            ))
-            db.commit()
-            agendamento_id = cursor.lastrowid
-
-            # Formata data para email
-            try:
-                data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
-            except:
-                data_formatada = data
-
-            # Mensagens de email
-            mensagem_cliente = f"""
-Olá!
-
-Seu agendamento foi confirmado ✅
-
-📅 Data: {data_formatada}
-⏰ Horário: {horario}
-💇 Serviços: {', '.join(servicos)}
-💰 Total: R$ {total}
-📞 Telefone: {telefone}
-"""
-            try:
-                enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
-            except Exception as e:
-                print("Erro ao enviar email cliente:", e)
-
-            mensagem_admin = f"""
-NOVO AGENDAMENTO RECEBIDO
-
-Cliente: {session['email']}
-Telefone: {telefone}
-
-Data: {data_formatada}
-Horário: {horario}
-Serviços: {', '.join(servicos)}
-Total: R$ {total}
-"""
-            try:
-                enviar_email(ADMIN_EMAIL, "Novo agendamento recebido", mensagem_admin)
-            except Exception as e:
-                print("Erro ao enviar email admin:", e)
-
-            flash("Agendamento realizado com sucesso!", "sucesso")
-            return redirect(url_for("confirmacao", id=agendamento_id))
-
-        # GET: pega horários já ocupados
-        cursor.execute("SELECT data, horario FROM agendamentos")
-        ocupados_db = cursor.fetchall()
-        horarios_ocupados = {}
-
-        for ag in ocupados_db:
-            data_obj = ag.get("data")
-            horario_obj = ag.get("horario")
-
-            if not data_obj or not horario_obj:
-                continue
-
-            # Data como string
-            data_str = data_obj.strftime("%Y-%m-%d") if hasattr(data_obj, "strftime") else str(data_obj)
-
-            # Horário como string
-            hora_str = None
-            if isinstance(horario_obj, timedelta):
-                total_minutos = horario_obj.seconds // 60
-                h = total_minutos // 60
-                m = total_minutos % 60
-                hora_str = f"{h:02d}:{m:02d}"
-            elif hasattr(horario_obj, "strftime"):
-                hora_str = horario_obj.strftime("%H:%M")
-            else:
-                hora_str = str(horario_obj)[:5]
-
-            if data_str not in horarios_ocupados:
-                horarios_ocupados[data_str] = []
-
-            if hora_str:
-                horarios_ocupados[data_str].append(hora_str)
-
-        # Ordena horários de cada dia
-        for dia in horarios_ocupados:
-            horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
-
-        cursor.close()
-        db.close()
-
-        return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
-
-    except Exception as e:
-        print("Erro na rota /agendamento:", e)
-        flash("Ocorreu um erro interno. Tente novamente.", "erro")
-        return redirect("/index")
-
-@app.route("/confirmacao/<int:id>")
-def confirmacao(id):
-
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM agendamentos WHERE id=%s", (id,))
-    agendamento = cursor.fetchone()
+    if request.method == "POST":
+        data = request.form.get("data")
+        horario = request.form.get("horario")
+        telefone = request.form.get("telefone")
+        servicos = request.form.getlist("servicos")
+        total = request.form.get("total")
 
+        if not all([data, horario, telefone, servicos, total]):
+            flash("Preencha todos os campos", "erro")
+            return redirect("/agendamento")
+
+        cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
+        if cursor.fetchone():
+            flash("Horário já reservado", "erro")
+            return redirect("/agendamento")
+
+        cursor.execute(
+            "INSERT INTO agendamentos (usuario_id, data, horario, servicos, total, telefone, email) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s)",
+            (session["usuario_id"], data, horario, ", ".join(servicos), total, telefone, session["email"])
+        )
+        db.commit()
+        agendamento_id = cursor.lastrowid
+        cursor.close()
+        db.close()
+        flash("Agendamento realizado com sucesso!", "sucesso")
+        return redirect(url_for("confirmacao", id=agendamento_id))
+
+    # GET: Pega horários ocupados
+    cursor.execute("SELECT data, horario FROM agendamentos")
+    ocupados = cursor.fetchall()
     cursor.close()
     db.close()
 
-    if not agendamento:
-        flash("Agendamento não encontrado", "erro")
-        return redirect("/agendamento")
-    if agendamento and agendamento["horario"]:
-        agendamento["horario"] = str(agendamento["horario"])[:5]
+    horarios_ocupados = {}
+    for ag in ocupados:
+        data_str = ag["data"].strftime("%Y-%m-%d") if hasattr(ag["data"], "strftime") else str(ag["data"])
+        hora_str = ag["horario"].strftime("%H:%M") if hasattr(ag["horario"], "strftime") else str(ag["horario"])[:5]
+        if data_str not in horarios_ocupados:
+            horarios_ocupados[data_str] = []
+        horarios_ocupados[data_str].append(hora_str)
 
-    return render_template("confirmacao.html",
-                           agendamento=agendamento)
+    return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
 
-
-
+# ================== LISTA DE AGENDAMENTOS ==================
 @app.route("/agendamentos")
 def agendamentos():
     if "usuario_id" not in session:
-        flash("Você precisa estar logado", "erro")
+        flash("Você precisa estar logado para ver seus agendamentos", "erro")
         return redirect("/login")
-
-    try:
-        db = get_db_salao()
-        cursor = db.cursor(dictionary=True)
-        usuario_id = session["usuario_id"]
-
-        cursor.execute("""
-            SELECT id, data, horario, servicos, total, telefone, email
-            FROM agendamentos
-            WHERE usuario_id = %s
-            ORDER BY data DESC, horario DESC
-        """, (usuario_id,))
-
-        lista_agendamentos = cursor.fetchall()
-        for ag in lista_agendamentos:
-            if ag.get("horario"):
-                ag["horario"] = str(ag["horario"])[:5]
-            else:
-                ag["horario"] = "—"
-
-        cursor.close()
-        db.close()
-
-        return render_template("agendamentos.html", agendamentos=lista_agendamentos)
-
-    except Exception as e:
-        print("Erro /agendamentos:", e)
-        flash("Ocorreu um erro interno. Tente novamente.", "erro")
-        return redirect("/index")
-
-@app.route("/contato", methods=["GET", "POST"])
-def contato():
-    if request.method == "POST":
-        nome = request.form.get("nome")
-        email = request.form.get("email")
-        mensagem = request.form.get("mensagem")
-
-        msg = Message(
-            subject=f"Nova mensagem de contato de {nome}",
-            recipients=["thalysondasilvaribeiro@gmail.com"]
-        )
-
-        msg.body = f"Nome: {nome}\nEmail: {email}\nMensagem: {mensagem}"
-        enviar_email(
-            "thalysondasilvaribeiro@gmail.com",
-            f"Nova mensagem de contato de {nome}",
-            msg.body
-        )
-
-
-        flash("Mensagem enviada com sucesso!", "sucesso")
-        return redirect(url_for("index"))
-
-    return render_template("contato.html")
-
-@app.route("/api/horarios/<data>")
-def api_horarios(data):
 
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
+    usuario_id = session["usuario_id"]
 
-    cursor.execute("""
-        SELECT horario FROM agendamentos
-        WHERE data=%s
-    """, (data,))
-
-    resultados = cursor.fetchall()
-
-    horarios = []
-
-    for r in resultados:
-        h = r["horario"]
-
-        if not h:
-            continue
-
-        if isinstance(h, timedelta):
-            total_minutes = h.seconds // 60
-            horas = total_minutes // 60
-            minutos = total_minutes % 60
-            horarios.append(f"{horas:02d}:{minutos:02d}")
-
-        elif hasattr(h, "strftime"):
-            horarios.append(h.strftime("%H:%M"))
-
-        else:
-            horarios.append(str(h)[:5])
-
+    cursor.execute("SELECT id, data, horario, servicos, total, telefone, email "
+                   "FROM agendamentos WHERE usuario_id=%s ORDER BY data DESC, horario DESC", (usuario_id,))
+    lista = cursor.fetchall()
     cursor.close()
     db.close()
 
-    return jsonify(horarios)
+    # Formata horário
+    for ag in lista:
+        ag["horario"] = str(ag["horario"])[:5] if ag.get("horario") else "—"
 
+    return render_template("agendamentos.html", agendamentos=lista)
 
+# ================== CONFIRMAÇÃO ==================
+@app.route("/confirmacao/<int:id>")
+def confirmacao(id):
+    db = get_db_salao()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM agendamentos WHERE id=%s", (id,))
+    ag = cursor.fetchone()
+    cursor.close()
+    db.close()
 
-@app.route("/esqueceu-senha", methods=["GET","POST"])
-def esqueceu_senha():
+    if not ag:
+        flash("Agendamento não encontrado", "erro")
+        return redirect("/agendamento")
 
-    if request.method == "POST":
+    ag["horario"] = str(ag["horario"])[:5] if ag.get("horario") else "—"
+    return render_template("confirmacao.html", agendamento=ag)
 
-        email = request.form.get("email")
-
-        db = get_db_login()
-        cursor = db.cursor(dictionary=True)
-
-        cursor.execute("SELECT * FROM usuario WHERE email=%s", (email,))
-        user = cursor.fetchone()
-
-        cursor.close()
-        db.close()
-
-        if not user:
-            flash("Email não encontrado", "erro")
-            return redirect("/esqueceu-senha")
-
-        token = serializer.dumps(email, salt="reset-senha")
-
-        link = f"{os.getenv('BASE_URL')}{url_for('redefinir_senha', token=token)}"
-
-
-        msg = Message(
-            subject="Redefinição de senha",
-            recipients=[email]
-        )
-
-        msg.body = f"""
-Olá!
-
-Clique no link abaixo para redefinir sua senha:
-
-{link}
-
-Esse link expira em 15 minutos.
-
-Caso não tenho sido você, ignora esse email!
-"""
-
-
-
-        enviar_email(email, "Redefinição de senha", msg.body)
-
-        flash("Email enviado! Verifique sua caixa.", "sucesso")
-        return redirect("/login")
-
-    return render_template("esqueceu-senha.html")
-
-
-@app.route("/redefinir-senha/<token>", methods=["GET","POST"])
-def redefinir_senha(token):
-
-    try:
-        email = serializer.loads(
-            token,
-            salt="reset-senha",
-            max_age=900
-        )
-    except:
-        flash("Link inválido ou expirado", "erro")
-        return redirect("/login")
-
-    if request.method == "POST":
-
-        nova_senha = request.form.get("senha")
-
-        if not senha_valida(nova_senha):
-            flash("Senha fraca", "erro")
-            return redirect(request.url)
-
-        senha_hash = generate_password_hash(nova_senha)
-
-        db = get_db_login()
-        cursor = db.cursor()
-
-        cursor.execute("""
-            UPDATE usuario
-            SET senha=%s
-            WHERE email=%s
-        """, (senha_hash, email))
-
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        flash("Senha redefinida com sucesso!", "sucesso")
-        return redirect("/login")
-
-    return render_template("redefinir-senha.html")
-
-@app.route("/sobre")
-def sobre():
-    return render_template("sobre.html")
-
-from threading import Thread
-
-from sib_api_v3_sdk import Configuration, ApiClient
-from sib_api_v3_sdk.api import transactional_emails_api
-from sib_api_v3_sdk.models import SendSmtpEmail
-import os
-
-def enviar_email(destinatario, assunto, mensagem):
-    configuration = Configuration()
-    configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
-
-    email = SendSmtpEmail(
-        to=[{"email": destinatario}],
-        subject=assunto,
-        html_content=f"<html><body><p>{mensagem}</p></body></html>",
-        sender={"name": "Jefferson Cabeleireiro", "email": "thalysondasilvaribeiro@gmail.com"}
-    )
-
-    try:
-        api_instance.send_transac_email(email)
-        print("Email enviado com sucesso!")
-    except Exception as e:
-        print("Erro ao enviar:", e)
-
-
-
-
-
-
+# ================== RODAR APP ==================
 if __name__ == "__main__":
     app.run(debug=True)
