@@ -145,12 +145,59 @@ def agendamento():
             "VALUES (%s,%s,%s,%s,%s,%s,%s)",
             (session["usuario_id"], data, horario, ", ".join(servicos), total, telefone, session["email"])
         )
+        
         db.commit()
+
+# ================= EMAILS =================
+
+        servicos_txt = ", ".join(servicos)
+
+        mensagem_admin = f"""
+Novo agendamento realizado!
+
+Cliente: {session["email"]}
+Telefone: {telefone}
+
+Data: {data}
+Horário: {horario}
+
+Serviços: {servicos_txt}
+Total: R$ {total}
+"""
+
+        mensagem_cliente = f"""
+Seu agendamento foi confirmado ✅
+
+Data: {data}
+Horário: {horario}
+
+Serviços: {servicos_txt}
+Total: R$ {total}
+
+Caso precise alterar, entre em contato.
+"""
+
+# email do dono
+        enviar_email(
+            "thalysondasilvaribeiro@gmail.com",
+            "Novo agendamento recebido",
+            mensagem_admin
+        )
+
+# email do cliente
+        enviar_email(
+            session["email"],
+            "Confirmação de agendamento",
+            mensagem_cliente
+        )
+
         agendamento_id = cursor.lastrowid
         cursor.close()
         db.close()
+
         flash("Agendamento realizado!", "sucesso")
         return redirect(f"/confirmacao/{agendamento_id}")
+
 
     # GET: horários ocupados
     cursor.execute("SELECT data, horario FROM agendamentos")
@@ -225,7 +272,6 @@ def contato():
             mensagem_email
         )
 
-        flash("Mensagem enviada com sucesso!", "sucesso")
         return redirect(url_for("index"))
 
     return render_template("contato.html")
@@ -401,6 +447,9 @@ def enviar_email(destinatario, assunto, mensagem):
 
 
 
+@app.route("/mensagem-enviada")
+def mensagem_enviada():
+    return render_template("mensagem-enviada.html")
 
 
 
