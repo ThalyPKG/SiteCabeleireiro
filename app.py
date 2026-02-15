@@ -163,7 +163,6 @@ def agendamento():
     cursor = db.cursor(dictionary=True)
 
     if request.method == "POST":
-
         data = request.form.get("data")
         horario = request.form.get("horario")
         telefone = request.form.get("telefone")
@@ -174,20 +173,17 @@ def agendamento():
             flash("Preencha todos os campos", "erro")
             return redirect("/agendamento")
 
-        cursor.execute("""
-            SELECT id FROM agendamentos
-            WHERE data=%s AND horario=%s
-        """, (data, horario))
-
+        # Verifica se horário já reservado
+        cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
         if cursor.fetchone():
             flash("Horário já reservado", "erro")
             return redirect("/agendamento")
 
-        # salva
+        # Salva agendamento
         cursor.execute("""
             INSERT INTO agendamentos
-            (usuario_id,data,horario,servicos,total,telefone,email)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            (usuario_id, data, horario, servicos, total, telefone, email)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
             session["usuario_id"],
             data,
@@ -197,13 +193,14 @@ def agendamento():
             telefone,
             session["email"]
         ))
-
         db.commit()
         agendamento_id = cursor.lastrowid
 
-        data_formatada = datetime.strptime(
-            data, "%Y-%m-%d"
-        ).strftime("%d/%m/%Y")
+        # Formata data para e-mail
+        try:
+            data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except:
+            data_formatada = data
 
         mensagem_cliente = f"""
 Olá!
@@ -216,9 +213,7 @@ Seu agendamento foi confirmado ✅
 💰 Total: R$ {total}
 📞 Telefone: {telefone}
 """
-
         enviar_email(session["email"], "Agendamento confirmado ✂️", mensagem_cliente)
-
 
         mensagem_admin = f"""
 NOVO AGENDAMENTO RECEBIDO
@@ -231,31 +226,31 @@ Horário: {horario}
 Serviços: {", ".join(servicos)}
 Total: R$ {total}
 """
-
         enviar_email(ADMIN_EMAIL, "Novo agendamento recebido", mensagem_admin)
-
 
         cursor.close()
         db.close()
-
         return redirect(url_for("confirmacao", id=agendamento_id))
 
-
+    # GET: pega horários já ocupados
     cursor.execute("SELECT data, horario FROM agendamentos")
     ocupados_db = cursor.fetchall()
     horarios_ocupados = {}
 
-    for ag in ocupados_db:  
+    for ag in ocupados_db:
         data_obj = ag.get("data")
         horario_obj = ag.get("horario")
 
         if not data_obj or not horario_obj:
             continue
 
-    # transforma a data em string
-        data_str = data_obj.strftime("%Y-%m-%d") if hasattr(data_obj, "strftime") else str(data_obj)
+        # transforma data em string
+        if hasattr(data_obj, "strftime"):
+            data_str = data_obj.strftime("%Y-%m-%d")
+        else:
+            data_str = str(data_obj)
 
-    # transforma horário em string
+        # transforma horário em string
         if isinstance(horario_obj, timedelta):
             total_minutos = horario_obj.seconds // 60
             h = total_minutos // 60
@@ -266,13 +261,12 @@ Total: R$ {total}
         else:
             hora_str = str(horario_obj)[:5]
 
-    # adiciona ao dict
         if data_str not in horarios_ocupados:
             horarios_ocupados[data_str] = []
 
         horarios_ocupados[data_str].append(hora_str)
 
-# ordena os horários de cada dia
+    # Ordena horários de cada dia: mais recentes no topo
     for dia in horarios_ocupados:
         horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
 
