@@ -178,10 +178,7 @@ def agendamento():
                 return redirect("/agendamento")
 
             # Verifica se horário já reservado
-            cursor.execute(
-                "SELECT id FROM agendamentos WHERE data=%s AND horario=%s",
-                (data, horario)
-            )
+            cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
             if cursor.fetchone():
                 flash("Horário já reservado", "erro")
                 return redirect("/agendamento")
@@ -206,9 +203,10 @@ def agendamento():
             # Formata data para email
             try:
                 data_formatada = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
-            except Exception:
+            except:
                 data_formatada = data
 
+            # Mensagens de email
             mensagem_cliente = f"""
 Olá!
 
@@ -257,10 +255,7 @@ Total: R$ {total}
                 continue
 
             # Data como string
-            if hasattr(data_obj, "strftime"):
-                data_str = data_obj.strftime("%Y-%m-%d")
-            else:
-                data_str = str(data_obj)
+            data_str = data_obj.strftime("%Y-%m-%d") if hasattr(data_obj, "strftime") else str(data_obj)
 
             # Horário como string
             hora_str = None
@@ -280,7 +275,7 @@ Total: R$ {total}
             if hora_str:
                 horarios_ocupados[data_str].append(hora_str)
 
-        # Ordena horários: mais recentes no topo
+        # Ordena horários de cada dia
         for dia in horarios_ocupados:
             horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
 
@@ -292,7 +287,7 @@ Total: R$ {total}
     except Exception as e:
         print("Erro na rota /agendamento:", e)
         flash("Ocorreu um erro interno. Tente novamente.", "erro")
-        return redirect("/agendamento")
+        return redirect("/index")
 
 @app.route("/confirmacao/<int:id>")
 def confirmacao(id):
@@ -319,37 +314,38 @@ def confirmacao(id):
 
 @app.route("/agendamentos")
 def agendamentos():
-
     if "usuario_id" not in session:
-        return redirect(url_for("login"))
+        flash("Você precisa estar logado", "erro")
+        return redirect("/login")
 
-    db = get_db_salao()
-    cursor = db.cursor(dictionary=True)
+    try:
+        db = get_db_salao()
+        cursor = db.cursor(dictionary=True)
+        usuario_id = session["usuario_id"]
 
-    usuario_id = session["usuario_id"]
+        cursor.execute("""
+            SELECT id, data, horario, servicos, total, telefone, email
+            FROM agendamentos
+            WHERE usuario_id = %s
+            ORDER BY data DESC, horario DESC
+        """, (usuario_id,))
 
-    cursor.execute("""
-        SELECT id, data, horario, servicos, total, telefone, email
-        FROM agendamentos
-        WHERE usuario_id = %s
-        ORDER BY data DESC, horario DESC
-    """, (usuario_id,))
+        lista_agendamentos = cursor.fetchall()
+        for ag in lista_agendamentos:
+            if ag.get("horario"):
+                ag["horario"] = str(ag["horario"])[:5]
+            else:
+                ag["horario"] = "—"
 
-    lista_agendamentos = cursor.fetchall()
-    for ag in lista_agendamentos:
-        if ag["horario"]:
-            ag["horario"] = str(ag["horario"])[:5]
+        cursor.close()
+        db.close()
 
-    
+        return render_template("agendamentos.html", agendamentos=lista_agendamentos)
 
-    cursor.close()
-    db.close()
-
-    return render_template(
-        "agendamentos.html",
-        agendamentos=lista_agendamentos
-    )
-
+    except Exception as e:
+        print("Erro /agendamentos:", e)
+        flash("Ocorreu um erro interno. Tente novamente.", "erro")
+        return redirect("/index")
 
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
