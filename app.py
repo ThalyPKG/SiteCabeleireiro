@@ -248,8 +248,23 @@ Total: R$ {total}
     horarios_ocupados = {}
 
     for ag in ocupados_db:
-        data_str = ag["data"].strftime("%Y-%m-%d")
-        hora_str = str(ag["horario"])[:5]
+        data_obj = ag.get("data")
+        horario_obj = ag.get("horario")
+
+        if not data_obj or not horario_obj:
+            continue
+
+        data_str = data_obj.strftime("%Y-%m-%d")
+
+        if isinstance(horario_obj, timedelta):
+            total_minutos = horario_obj.seconds // 60
+            h = total_minutos // 60
+            m = total_minutos % 60
+            hora_str = f"{h:02d}:{m:02d}"
+        elif hasattr(horario_obj, "strftime"):
+            hora_str = horario_obj.strftime("%H:%M")
+        else:
+            hora_str = str(horario_obj)[:5]
 
         if data_str not in horarios_ocupados:
             horarios_ocupados[data_str] = []
@@ -257,16 +272,15 @@ Total: R$ {total}
         horarios_ocupados[data_str].append(hora_str)
 
 
+    for dia in horarios_ocupados:
+        horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
+
     cursor.close()
     db.close()
 
-    return render_template(
-        "agendamento.html",
-        horarios_ocupados=horarios_ocupados
-    )
+    return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
 
-
-
+  
 @app.route("/confirmacao/<int:id>")
 def confirmacao(id):
 
@@ -312,6 +326,8 @@ def agendamentos():
     for ag in lista_agendamentos:
         if ag["horario"]:
             ag["horario"] = str(ag["horario"])[:5]
+
+    
 
     cursor.close()
     db.close()
