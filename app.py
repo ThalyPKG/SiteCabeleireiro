@@ -247,29 +247,54 @@ Total: R$ {total}
 
     horarios_ocupados = {}
 
-    for ag in ocupados_db:
-        data_obj = ag.get("data")
-        horario_obj = ag.get("horario")
+horarios_ocupados = {}
 
-        if not data_obj or not horario_obj:
-            continue
+for ag in ocupados_db:
+    data_obj = ag.get("data")
+    horario_obj = ag.get("horario")
 
-        data_str = data_obj.strftime("%Y-%m-%d")
+    if not data_obj or not horario_obj:
+        continue
 
-        if isinstance(horario_obj, timedelta):
+    # transforma a data em string
+    data_str = data_obj.strftime("%Y-%m-%d") if hasattr(data_obj, "strftime") else str(data_obj)
+
+    # transforma horário em string
+    if isinstance(horario_obj, timedelta):
+        total_minutos = horario_obj.seconds // 60
+        h = total_minutos // 60
+        m = total_minutos % 60
+        hora_str = f"{h:02d}:{m:02d}"
+    elif hasattr(horario_obj, "strftime"):
+        hora_str = horario_obj.strftime("%H:%M")
+    else:
+        hora_str = str(horario_obj)[:5]
+
+    # adiciona ao dict
+    if data_str not in horarios_ocupados:
+        horarios_ocupados[data_str] = []
+
+    horarios_ocupados[data_str].append(hora_str)
+
+# ordena os horários de cada dia
+for dia in horarios_ocupados:
+    horarios_ocupados[dia] = sorted(horarios_ocupados[dia], reverse=True)
+
+
+    if isinstance(horario_obj, timedelta):
             total_minutos = horario_obj.seconds // 60
             h = total_minutos // 60
             m = total_minutos % 60
             hora_str = f"{h:02d}:{m:02d}"
-        elif hasattr(horario_obj, "strftime"):
+    elif hasattr(horario_obj, "strftime"):
             hora_str = horario_obj.strftime("%H:%M")
-        else:
+    else:
             hora_str = str(horario_obj)[:5]
 
-        if data_str not in horarios_ocupados:
+    if data_str not in horarios_ocupados:
             horarios_ocupados[data_str] = []
 
-        horarios_ocupados[data_str].append(hora_str)
+    horarios_ocupados[data_str].append(hora_str)
 
 
     for dia in horarios_ocupados:
