@@ -9,19 +9,10 @@ import os
 import re
 import secrets
 import hashlib
-import traceback
-
-
 
 load_dotenv()
 
 app = Flask(__name__)
-
-@app.errorhandler(500)
-def internal_error(error):
-    print(traceback.format_exc())
-    return "Ocorreu um erro interno no Render.", 500
-
 app.secret_key = os.getenv("SECRET_KEY")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
@@ -495,17 +486,33 @@ def redefinir_senha(token):
 def sobre():
     return render_template("sobre.html")
 
+from threading import Thread
+
+from sib_api_v3_sdk import Configuration, ApiClient
+from sib_api_v3_sdk.api import transactional_emails_api
+from sib_api_v3_sdk.models import SendSmtpEmail
+import os
+
 def enviar_email(destinatario, assunto, mensagem):
+    configuration = Configuration()
+    configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+
+    api_client = ApiClient(configuration)
+    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+
+    email = SendSmtpEmail(
+        to=[{"email": destinatario}],
+        subject=assunto,
+        html_content=f"<html><body><p>{mensagem}</p></body></html>",
+        sender={"name": "Jefferson Cabeleireiro", "email": "thalysondasilvaribeiro@gmail.com"}
+    )
+
     try:
-        msg = Message(
-            subject=assunto,
-            recipients=[destinatario],
-            body=mensagem
-        )
-        mail.send(msg)
+        api_instance.send_transac_email(email)
         print("Email enviado com sucesso!")
     except Exception as e:
-        print("Erro ao enviar email:", e)
+        print("Erro ao enviar:", e)
+
 
 
 
