@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, session, flash, url_for
+from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from itsdangerous import URLSafeTimedSerializer
 import mysql.connector
 import os
 import re
@@ -13,6 +14,8 @@ app = Flask(__name__)
 # ================== CONFIGURAÇÃO ==================
 app.secret_key = os.getenv("SECRET_KEY") or "chave_teste_fixa"
 app.config["PROPAGATE_EXCEPTIONS"] = True
+
+serializer = URLSafeTimedSerializer(app.secret_key)
 
 # ================== BANCO DE DADOS ==================
 def get_db_login():
@@ -208,18 +211,19 @@ def contato():
         email = request.form.get("email")
         mensagem = request.form.get("mensagem")
 
-        msg = Message(
-            subject=f"Nova mensagem de contato de {nome}",
-            recipients=["thalysondasilvaribeiro@gmail.com"]
-        )
+        mensagem_email = f"""
+        Nome: {nome}
+        Email: {email}
 
-        msg.body = f"Nome: {nome}\nEmail: {email}\nMensagem: {mensagem}"
+        Mensagem:
+        {mensagem}
+        """
+
         enviar_email(
             "thalysondasilvaribeiro@gmail.com",
             f"Nova mensagem de contato de {nome}",
-            msg.body
+            mensagem_email
         )
-
 
         flash("Mensagem enviada com sucesso!", "sucesso")
         return redirect(url_for("index"))
@@ -288,29 +292,22 @@ def esqueceu_senha():
 
         token = serializer.dumps(email, salt="reset-senha")
 
-        link = f"{os.getenv('BASE_URL')}{url_for('redefinir_senha', token=token)}"
+        base_url = os.getenv("BASE_URL") or request.host_url
+        link = f"{base_url.rstrip('/')}{url_for('redefinir_senha', token=token)}"
 
+        mensagem_email = f"""
+        Olá!
 
-        msg = Message(
-            subject="Redefinição de senha",
-            recipients=[email]
-        )
+        Clique no link abaixo para redefinir sua senha:
 
-        msg.body = f"""
-Olá!
+        {link}
 
-Clique no link abaixo para redefinir sua senha:
+        Esse link expira em 15 minutos.
 
-{link}
+        Caso não tenha sido você, ignore este email.
+        """
 
-Esse link expira em 15 minutos.
-
-Caso não tenho sido você, ignora esse email!
-"""
-
-
-
-        enviar_email(email, "Redefinição de senha", msg.body)
+        enviar_email(email, "Redefinição de senha", mensagem_email)
 
         flash("Email enviado! Verifique sua caixa.", "sucesso")
         return redirect("/login")
@@ -369,24 +366,35 @@ from threading import Thread
 from sib_api_v3_sdk import Configuration, ApiClient
 from sib_api_v3_sdk.api import transactional_emails_api
 from sib_api_v3_sdk.models import SendSmtpEmail
-import os
 
 def enviar_email(destinatario, assunto, mensagem):
+
+    api_key = os.getenv("BREVO_API_KEY")
+
+    if not api_key:
+        print("BREVO_API_KEY não configurada")
+        return
+
     configuration = Configuration()
-    configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+    configuration.api_key['api-key'] = api_key
 
     api_client = ApiClient(configuration)
     api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
 
+    mensagem_html = mensagem.replace("\n", "<br>")
+
     email = SendSmtpEmail(
         to=[{"email": destinatario}],
         subject=assunto,
-        html_content=f"<html><body><p>{mensagem}</p></body></html>",
-        sender={"name": "Jefferson Cabeleireiro", "email": "thalysondasilvaribeiro@gmail.com"}
+        html_content=f"<html><body><p>{mensagem_html}</p></body></html>",
+        sender={
+            "name": "Jefferson Cabeleireiro",
+            "email": "thalysondasilvaribeiro@gmail.com"
+        }
     )
 
     try:
-        api_instance.send_transac_email(email)
+        Thread(target=api_instance.send_transac_email, args=(email,)).start()
         print("Email enviado com sucesso!")
     except Exception as e:
         print("Erro ao enviar:", e)
@@ -396,5 +404,6 @@ def enviar_email(destinatario, assunto, mensagem):
 
 
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
