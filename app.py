@@ -120,6 +120,9 @@ def logout():
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
+
+    session.pop("_flashes", None)
+
     hoje = datetime.now().strftime("%Y-%m-%d")
     if "usuario_id" not in session:
         flash("Faça login primeiro", "erro")
