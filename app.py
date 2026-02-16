@@ -152,6 +152,48 @@ def agendamento():
             flash("Preencha todos os campos", "erro")
             return redirect("/agendamento")
 
+                # ================= REGRA: 1 AGENDAMENTO A CADA 15 DIAS =================
+
+        cursor.execute("""
+            SELECT data, horario
+            FROM agendamentos
+            WHERE usuario_id = %s
+            ORDER BY data DESC, horario DESC
+            LIMIT 1
+        """, (session["usuario_id"],))
+
+        ultimo_agendamento = cursor.fetchone()
+
+        if ultimo_agendamento:
+
+            data_existente = ultimo_agendamento["data"]
+            horario_existente = ultimo_agendamento["horario"]
+
+            # monta datetime do agendamento existente
+            if hasattr(data_existente, "strftime"):
+                data_existente = data_existente.strftime("%Y-%m-%d")
+
+            horario_existente = str(horario_existente)[:5]
+
+            agendamento_existente = datetime.strptime(
+                f"{data_existente} {horario_existente}",
+                "%Y-%m-%d %H:%M"
+            )
+
+            # só considera se ainda não aconteceu
+            if agendamento_existente > datetime.now():
+
+                dias_passados = (datetime.now() - agendamento_existente).days
+
+                if dias_passados < 15:
+                    flash(
+                        "Você já possui um agendamento ativo. "
+                        "Só é possível marcar outro após 15 dias ou cancelando o atual.",
+                        "erro"
+                    )
+                    return redirect("/agendamento")
+
+
         cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
         if cursor.fetchone():
             flash("Horário já reservado", "erro")
