@@ -87,6 +87,9 @@ def registro():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
+    session.pop("_flashes", None)
+
     if request.method == "POST":
         email = request.form.get("email")
         senha = request.form.get("senha")
@@ -117,7 +120,7 @@ def logout():
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
-    hoje = datetime.now().strftime("%dY%m-%d")
+    hoje = datetime.now().strftime("%Y-%m-%d")
     if "usuario_id" not in session:
         flash("Faça login primeiro", "erro")
         return redirect("/login")
@@ -180,18 +183,20 @@ def agendamento():
                 "%Y-%m-%d %H:%M"
             )
 
-            # só considera se ainda não aconteceu
             if agendamento_existente > datetime.now():
 
-                dias_passados = (datetime.now() - agendamento_existente).days
+                dias_restantes = (agendamento_existente - datetime.now()).days
 
-                if dias_passados < 15:
+                if dias_restantes <= 15:
                     flash(
                         "Você já possui um agendamento ativo. "
-                        "Só é possível marcar outro após 15 dias ou cancelando o atual.",
-                        "erro"
+                        "Cancele o atual ou aguarde 15 dias para marcar outro.",
+                        "agendamento"
                     )
+                    cursor.close()
+                    db.close()
                     return redirect("/agendamento")
+
 
 
         cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
@@ -331,7 +336,7 @@ def contato():
             mensagem_email
         )
 
-        return redirect(url_for("mensagem-enviada"))
+        return redirect(url_for("mensagem_enviada"))
 
     return render_template("contato.html")
 
@@ -508,7 +513,7 @@ def enviar_email(destinatario, assunto, mensagem):
 
 @app.route("/mensagem-enviada")
 def mensagem_enviada():
-    return render_template("mensagem-enviada.html")
+    return render_template("mensagem_enviada.html")
 
 
 
