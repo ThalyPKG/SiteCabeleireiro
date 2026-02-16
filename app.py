@@ -117,6 +117,7 @@ def logout():
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
+    hoje = datetime.now().strftime("%dY%m-%d")
     if "usuario_id" not in session:
         flash("Faça login primeiro", "erro")
         return redirect("/login")
@@ -127,6 +128,22 @@ def agendamento():
     if request.method == "POST":
         data = request.form.get("data")
         horario = request.form.get("horario")
+
+        try:
+            data_hora_agendamento = datetime.strptime(
+                f"{data} {horario}",
+                "%Y-%m-%d %H:%M"
+            )
+        except:
+            flash("Data ou horário inválido", "erro")
+            return redirect("/agendamento")
+
+        agora = datetime.now()
+
+        if data_hora_agendamento <= agora:
+            flash("Não é possível agendar em horários que já passaram.", "erro")
+            return redirect("/agendamento")
+
         telefone = request.form.get("telefone")
         servicos = request.form.getlist("servicos")
         total = request.form.get("total")
@@ -213,7 +230,7 @@ Caso precise alterar, entre em contato.
             horarios_ocupados[data_str] = []
         horarios_ocupados[data_str].append(hora_str)
 
-    return render_template("agendamento.html", horarios_ocupados=horarios_ocupados)
+    return render_template("agendamento.html", horarios_ocupados=horarios_ocupados, hoje=hoje)
 
 @app.route("/agendamentos")
 def agendamentos():
@@ -272,7 +289,7 @@ def contato():
             mensagem_email
         )
 
-        return redirect(url_for("index"))
+        return redirect(url_for("mensagem-enviada"))
 
     return render_template("contato.html")
 
