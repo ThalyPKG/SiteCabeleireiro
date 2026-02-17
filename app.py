@@ -14,6 +14,9 @@ app = Flask(__name__)
 # ================== CONFIGURAÇÃO ==================
 app.secret_key = os.getenv("SECRET_KEY") or "chave_teste_fixa"
 app.config["PROPAGATE_EXCEPTIONS"] = True
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+
 
 serializer = URLSafeTimedSerializer(app.secret_key)
 
@@ -88,7 +91,6 @@ def registro():
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
-    session.pop("_flashes", None)
 
     if request.method == "POST":
         email = request.form.get("email")
@@ -188,7 +190,7 @@ def agendamento():
 
             if agendamento_existente > datetime.now():
 
-                dias_restantes = (agendamento_existente - datetime.now()).days
+                limite = agendamento_existente + timedelta(days=15)
 
                 if dias_restantes <= 15:
                     flash(
@@ -482,35 +484,39 @@ from sib_api_v3_sdk.models import SendSmtpEmail
 
 def enviar_email(destinatario, assunto, mensagem):
 
-    api_key = os.getenv("BREVO_API_KEY")
+    def enviar():
+        try:
+            api_key = os.getenv("BREVO_API_KEY")
+            if not api_key:
+                print("BREVO_API_KEY não configurada")
+                return
 
-    if not api_key:
-        print("BREVO_API_KEY não configurada")
-        return
+            configuration = Configuration()
+            configuration.api_key['api-key'] = api_key
 
-    configuration = Configuration()
-    configuration.api_key['api-key'] = api_key
+            api_client = ApiClient(configuration)
+            api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
 
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+            mensagem_html = mensagem.replace("\n", "<br>")
 
-    mensagem_html = mensagem.replace("\n", "<br>")
+            email = SendSmtpEmail(
+                to=[{"email": destinatario}],
+                subject=assunto,
+                html_content=f"<html><body><p>{mensagem_html}</p></body></html>",
+                sender={
+                    "name": "Jefferson Cabeleireiro",
+                    "email": "thalysondasilvaribeiro@gmail.com"
+                }
+            )
 
-    email = SendSmtpEmail(
-        to=[{"email": destinatario}],
-        subject=assunto,
-        html_content=f"<html><body><p>{mensagem_html}</p></body></html>",
-        sender={
-            "name": "Jefferson Cabeleireiro",
-            "email": "thalysondasilvaribeiro@gmail.com"
-        }
-    )
 
-    try:
-        Thread(target=api_instance.send_transac_email, args=(email,)).start()
-        print("Email enviado com sucesso!")
-    except Exception as e:
-        print("Erro ao enviar:", e)
+            api_instance.send_transac_email(email)
+            print("Email enviado com sucesso!")
+
+        except Exception as e:
+            print("Erro ao enviar:", e)
+    
+    Thread(target=enviar, daemon=True).start()
 
 
 
