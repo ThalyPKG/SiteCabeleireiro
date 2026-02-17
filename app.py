@@ -206,8 +206,7 @@ def agendamento():
 
             dias_passados = (datetime.now() - agendamento_existente).days
 
-            if dias_passados < 0:
-                dias_passados = 0
+            if dias_passados < 15:
                 cursor.close()
                 db.close()
                 flash(
