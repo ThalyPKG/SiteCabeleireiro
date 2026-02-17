@@ -106,10 +106,10 @@ def login():
         if user and check_password_hash(user["senha"], senha):
             session["usuario_id"] = user["codigo"]
             session["email"] = user["email"]
-            flash("Login realizado com sucesso!", "sucesso")
+            flash("Login realizado com sucesso!", "login")
             return redirect("/index")
         else:
-            flash("Email ou senha inválidos", "erro")
+            flash("Email ou senha inválidos", "login")
             return redirect("/login")
 
     return render_template("login.html")
@@ -173,17 +173,14 @@ def agendamento():
             data_existente = ultimo_agendamento["data"]
             horario_existente = ultimo_agendamento["horario"]
 
-            # converte data
             if hasattr(data_existente, "strftime"):
                 data_existente = data_existente.strftime("%Y-%m-%d")
 
-            # trata horário
             if hasattr(horario_existente, "strftime"):
                 horario_existente = horario_existente.strftime("%H:%M:%S")
             else:
                 horario_existente = str(horario_existente)
 
-            # garante formato HH:MM
             horario_existente = horario_existente.split(":")
             horario_existente = f"{horario_existente[0]}:{horario_existente[1]}"
             
@@ -193,7 +190,6 @@ def agendamento():
                 "%Y-%m-%d %H:%M"
             )
 
-            # 🔥 regra correta: soma 15 dias ao último agendamento
             proximo_permitido = agendamento_existente + timedelta(days=15)
 
             if data_hora_agendamento < proximo_permitido:

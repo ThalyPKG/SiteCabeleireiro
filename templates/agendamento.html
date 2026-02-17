@@ -15,8 +15,7 @@
 
   <h1>Agendar Horário</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true,
-    category_filter=["agendamento","erro","sucesso"]) %}
+  {% with messages = get_flashed_messages(with_categories=true)}
   {% if messages %}
     {% for categoria, mensagem in messages %}
       <div class="mensagem {{ categoria }}">
