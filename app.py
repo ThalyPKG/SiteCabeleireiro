@@ -544,38 +544,41 @@ def cancelar_agendamento(id):
     """, (id,))
     ag = cursor.fetchone()
 
+    # ❌ não existe ou não pertence ao usuário
     if not ag or ag["usuario_id"] != session["usuario_id"]:
         cursor.close()
         db.close()
         flash("Agendamento não encontrado", "erro")
         return redirect("/agendamentos")
 
-        data_val = ag["data"]
-        hora_val = ag["horario"]
+    # ✅ converter data e hora corretamente
+    data_val = ag["data"]
+    hora_val = ag["horario"]
 
-        if hasattr(data_val, "strftime"):
-            data_str = data_val.strftime("%Y-%m-%d")
-        else:
-            data_str = str(data_val)
+    if hasattr(data_val, "strftime"):
+        data_str = data_val.strftime("%Y-%m-%d")
+    else:
+        data_str = str(data_val)
 
-        hora_str = str(hora_val).split(":")
-        hora_str = f"{hora_str[0]}:{hora_str[1]}"
+    # aceita HH:MM:SS
+    hora_str = str(hora_val)[:8]
 
-        data_hora_agendamento = datetime.strptime(
-            f"{data_str} {hora_str}",
-            "%Y-%m-%d %H:%M"
-)
+    data_hora_agendamento = datetime.strptime(
+        f"{data_str} {hora_str}",
+        "%Y-%m-%d %H:%M:%S"
+    )
 
-
+    # horário atual (Brasil)
     agora = datetime.utcnow() - timedelta(hours=3)
 
+    # 🚫 bloquear cancelamento em cima da hora
     if data_hora_agendamento - agora < timedelta(hours=2):
         cursor.close()
         db.close()
         flash("Cancelamento permitido apenas com 2 horas de antecedência.", "erro")
         return redirect("/agendamentos")
 
-    # apagar
+    # 🗑 deletar
     cursor.execute("DELETE FROM agendamentos WHERE id=%s", (id,))
     db.commit()
 
@@ -584,6 +587,7 @@ def cancelar_agendamento(id):
 
     flash("Agendamento cancelado com sucesso.", "sucesso")
     return redirect("/agendamentos")
+
 
 
 if __name__ == "__main__":
