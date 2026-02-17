@@ -164,6 +164,7 @@ def agendamento():
             SELECT data, horario
             FROM agendamentos
             WHERE usuario_id = %s
+            and CONCAT(data, ' ', horario) <= NOW()
             ORDER BY data DESC, horario DESC
             LIMIT 1
         """, (session["usuario_id"],))
@@ -205,7 +206,8 @@ def agendamento():
 
             dias_passados = (datetime.now() - agendamento_existente).days
 
-            if dias_passados < 15:
+            if dias_passados < 0:
+                dias_passados = 0
                 cursor.close()
                 db.close()
                 flash(
