@@ -3,35 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <title>Mensagem enviada</title>
-    <style>
-        body{
-            font-family: Arial, sans-serif;
-            background:#111;
-            color:white;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-            text-align:center;
-        }
+<style>
+    body{
+        font-family: Arial, sans-serif;
+        background:#111;
+        color:white;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        margin:0;
+        padding:20px;
+        text-align:center;
+    }
 
+    .box{
+        background:#1c1c1c;
+        padding:30px 20px;
+        border-radius:12px;
+        box-shadow:0 0 20px rgba(0,0,0,.5);
+        max-width:400px;
+        width:100%;
+    }
+
+    h1{
+        font-size:22px;
+    }
+
+    p{
+        font-size:16px;
+        line-height:1.5;
+    }
+
+    a{
+        display:inline-block;
+        margin-top:20px;
+        padding:12px 20px;
+        background:#00c853;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-size:16px;
+        width:100%;
+        box-sizing:border-box;
+    }
+
+    a:hover{
+        background:#00b44a;
+    }
+
+    /* telas maiores */
+    @media (min-width: 768px){
         .box{
-            background:#1c1c1c;
             padding:40px;
-            border-radius:12px;
-            box-shadow:0 0 20px rgba(0,0,0,.5);
         }
 
-        a{
-            display:inline-block;
-            margin-top:20px;
-            padding:10px 20px;
-            background:#00c853;
-            color:white;
-            text-decoration:none;
-            border-radius:6px;
+        h1{
+            font-size:26px;
         }
-    </style>
+    }
+</style>
+
 </head>
 <body>
 

@@ -528,6 +528,53 @@ def mensagem_enviada():
     return render_template("mensagem-enviada.html")
 
 
+@app.route("/cancelar-agendamento/<int:id>")
+def cancelar_agendamento(id):
+    if "usuario_id" not in session:
+        flash("Faça login primeiro", "erro")
+        return redirect("/login")
+
+    db = get_db_salao()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT data, horario, usuario_id
+        FROM agendamentos
+        WHERE id=%s
+    """, (id,))
+    ag = cursor.fetchone()
+
+    if not ag or ag["usuario_id"] != session["usuario_id"]:
+        cursor.close()
+        db.close()
+        flash("Agendamento não encontrado", "erro")
+        return redirect("/agendamentos")
+
+    # monta datetime do agendamento
+    data_str = ag["data"].strftime("%Y-%m-%d")
+    hora_str = str(ag["horario"])[:5]
+
+    data_hora_agendamento = datetime.strptime(
+        f"{data_str} {hora_str}", "%Y-%m-%d %H:%M"
+    )
+
+    agora = datetime.utcnow() - timedelta(hours=3)
+
+    if data_hora_agendamento - agora < timedelta(hours=2):
+        cursor.close()
+        db.close()
+        flash("Cancelamento permitido apenas com 2 horas de antecedência.", "erro")
+        return redirect("/agendamentos")
+
+    # apagar
+    cursor.execute("DELETE FROM agendamentos WHERE id=%s", (id,))
+    db.commit()
+
+    cursor.close()
+    db.close()
+
+    flash("Agendamento cancelado com sucesso.", "sucesso")
+    return redirect("/agendamentos")
 
 
 if __name__ == "__main__":

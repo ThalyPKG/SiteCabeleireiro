@@ -75,3 +75,19 @@
         font-size: 13px;
     }
 }
+
+.btn-cancelar{
+    display:inline-block;
+    margin-top:10px;
+    padding:8px 14px;
+    background:#d32f2f;
+    color:white;
+    text-decoration:none;
+    border-radius:6px;
+    font-size:14px;
+    transition:0.2s;
+}
+
+.btn-cancelar:hover{
+    background:#b71c1c;
+}
