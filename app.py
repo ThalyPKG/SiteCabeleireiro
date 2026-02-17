@@ -123,7 +123,6 @@ def logout():
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
 
-    session.pop("_flashes", None)
 
     hoje = datetime.now().strftime("%Y-%m-%d")
     if "usuario_id" not in session:
@@ -160,47 +159,42 @@ def agendamento():
             flash("Preencha todos os campos", "erro")
             return redirect("/agendamento")
 
-                # ================= REGRA: 1 AGENDAMENTO A CADA 15 DIAS =================
+# ================= REGRA: 1 AGENDAMENTO A CADA 15 DIAS =================
+cursor.execute("""
+    SELECT data, horario
+    FROM agendamentos
+    WHERE usuario_id = %s
+    ORDER BY data DESC, horario DESC
+    LIMIT 1
+""", (session["usuario_id"],))
 
-        cursor.execute("""
-            SELECT data, horario
-            FROM agendamentos
-            WHERE usuario_id = %s
-            ORDER BY data DESC, horario DESC
-            LIMIT 1
-        """, (session["usuario_id"],))
+ultimo_agendamento = cursor.fetchone()
 
-        ultimo_agendamento = cursor.fetchone()
+if ultimo_agendamento:
+    data_existente = ultimo_agendamento["data"]
+    horario_existente = ultimo_agendamento["horario"]
 
-        if ultimo_agendamento:
+    if hasattr(data_existente, "strftime"):
+        data_existente = data_existente.strftime("%Y-%m-%d")
 
-            data_existente = ultimo_agendamento["data"]
-            horario_existente = ultimo_agendamento["horario"]
+    horario_existente = str(horario_existente)[:5]
 
-            # monta datetime do agendamento existente
-            if hasattr(data_existente, "strftime"):
-                data_existente = data_existente.strftime("%Y-%m-%d")
+    agendamento_existente = datetime.strptime(
+        f"{data_existente} {horario_existente}",
+        "%Y-%m-%d %H:%M"
+    )
 
-            horario_existente = str(horario_existente)[:5]
+    dias_passados = (datetime.now() - agendamento_existente).days
 
-            agendamento_existente = datetime.strptime(
-                f"{data_existente} {horario_existente}",
-                "%Y-%m-%d %H:%M"
-            )
+    if dias_passados < 15:
+        cursor.close()
+        db.close()
+        flash(
+            f"Você já possui um agendamento há {dias_passados} dias. Aguarde 15 dias para novo agendamento.",
+            "erro"
+        )
+        return redirect("/agendamento")
 
-            if agendamento_existente > datetime.now():
-
-                limite = agendamento_existente + timedelta(days=15)
-
-                if datetime.now() <= limite:
-                    flash(
-                        "Você já possui um agendamento ativo. "
-                        "Cancele o atual ou aguarde 15 dias para marcar outro.",
-                        "agendamento"
-                    )
-                    cursor.close()
-                    db.close()
-                    return redirect("/agendamento")
 
 
 
@@ -524,7 +518,7 @@ def enviar_email(destinatario, assunto, mensagem):
 
 @app.route("/mensagem-enviada")
 def mensagem_enviada():
-    return render_template("mensagem_enviada.html")
+    return render_template("mensagem-enviada.html")
 
 
 
