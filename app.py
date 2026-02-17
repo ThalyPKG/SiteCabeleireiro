@@ -159,12 +159,10 @@ def agendamento():
             flash("Preencha todos os campos", "erro")
             return redirect("/agendamento")
 
-# ================= REGRA: 1 AGENDAMENTO A CADA 15 DIAS =================
         cursor.execute("""
             SELECT data, horario
             FROM agendamentos
             WHERE usuario_id = %s
-            and CONCAT(data, ' ', horario) <= NOW()
             ORDER BY data DESC, horario DESC
             LIMIT 1
         """, (session["usuario_id"],))
@@ -175,45 +173,36 @@ def agendamento():
             data_existente = ultimo_agendamento["data"]
             horario_existente = ultimo_agendamento["horario"]
 
+            # converte data
             if hasattr(data_existente, "strftime"):
                 data_existente = data_existente.strftime("%Y-%m-%d")
 
-            # trata data
-            if hasattr(data_existente, "strftime"):
-                data_str = data_existente.strftime("%Y-%m-%d")
+            # trata horário
+            if hasattr(horario_existente, "strftime"):
+                horario_existente = horario_existente.strftime("%H:%M")
             else:
-                data_str = str(data_existente)
-
-            # trata horario vindo do MySQL
-            h = horario_existente
-
-            if isinstance(h, timedelta):
-                total_minutes = h.seconds // 60
-                horas = total_minutes // 60
-                minutos = total_minutes % 60
-                hora_str = f"{horas:02d}:{minutos:02d}"
-
-            elif hasattr(h, "strftime"):  # tipo time
-                hora_str = h.strftime("%H:%M")
-
-            else:
-                hora_str = str(h)[:5]
+                horario_existente = str(horario_existente)[:5]
 
             agendamento_existente = datetime.strptime(
-                f"{data_str} {hora_str}",
+                f"{data_existente} {horario_existente}",
                 "%Y-%m-%d %H:%M"
-)
+            )
 
-            dias_passados = (datetime.now() - agendamento_existente).days
+            # 🔥 regra correta: soma 15 dias ao último agendamento
+            proximo_permitido = agendamento_existente + timedelta(days=15)
 
-            if dias_passados < 15:
+            if data_hora_agendamento < proximo_permitido:
+                dias_restantes = (proximo_permitido - data_hora_agendamento).days
+
                 cursor.close()
                 db.close()
+
                 flash(
-                    f"Você já possui um agendamento há {dias_passados} dias. Aguarde 15 dias para novo agendamento.",
+                    f"Você só pode agendar novamente a partir de {proximo_permitido.strftime('%d/%m/%Y')}.",
                     "erro"
                 )
                 return redirect("/agendamento")
+
 
 
 
