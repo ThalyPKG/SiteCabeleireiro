@@ -550,13 +550,22 @@ def cancelar_agendamento(id):
         flash("Agendamento não encontrado", "erro")
         return redirect("/agendamentos")
 
-    # monta datetime do agendamento
-    data_str = ag["data"].strftime("%Y-%m-%d")
-    hora_str = str(ag["horario"])[:5]
+        data_val = ag["data"]
+        hora_val = ag["horario"]
 
-    data_hora_agendamento = datetime.strptime(
-        f"{data_str} {hora_str}", "%Y-%m-%d %H:%M"
-    )
+        if hasattr(data_val, "strftime"):
+            data_str = data_val.strftime("%Y-%m-%d")
+        else:
+            data_str = str(data_val)
+
+        hora_str = str(hora_val).split(":")
+        hora_str = f"{hora_str[0]}:{hora_str[1]}"
+
+        data_hora_agendamento = datetime.strptime(
+            f"{data_str} {hora_str}",
+            "%Y-%m-%d %H:%M"
+)
+
 
     agora = datetime.utcnow() - timedelta(hours=3)
 
