@@ -19,7 +19,7 @@
         <form method="POST">
             <h1>Redefinir senha</h1>
 
-            {% with messages = get_flashed_messages(with_categories=true)}
+            {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for categoria, mensagem in messages %}
       {% if categoria == 'reset_senha' %}

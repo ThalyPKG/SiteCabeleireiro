@@ -21,7 +21,7 @@
         <form action="" method="POST">
             <h1>Login</h1>
 
-{% with messages = get_flashed_messages(with_categories=true)}
+{% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for categoria, mensagem in messages %}
       <div class="mensagem {{ categoria }}">
