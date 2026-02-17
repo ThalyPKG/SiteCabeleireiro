@@ -177,12 +177,31 @@ def agendamento():
             if hasattr(data_existente, "strftime"):
                 data_existente = data_existente.strftime("%Y-%m-%d")
 
-            horario_existente = str(horario_existente)[:5]
+            # trata data
+            if hasattr(data_existente, "strftime"):
+                data_str = data_existente.strftime("%Y-%m-%d")
+            else:
+                data_str = str(data_existente)
+
+            # trata horario vindo do MySQL
+            h = horario_existente
+
+            if isinstance(h, timedelta):
+                total_minutes = h.seconds // 60
+                horas = total_minutes // 60
+                minutos = total_minutes % 60
+                hora_str = f"{horas:02d}:{minutos:02d}"
+
+            elif hasattr(h, "strftime"):  # tipo time
+                hora_str = h.strftime("%H:%M")
+
+            else:
+                hora_str = str(h)[:5]
 
             agendamento_existente = datetime.strptime(
-                f"{data_existente} {horario_existente}",
+                f"{data_str} {hora_str}",
                 "%Y-%m-%d %H:%M"
-            )
+)
 
             dias_passados = (datetime.now() - agendamento_existente).days
 
