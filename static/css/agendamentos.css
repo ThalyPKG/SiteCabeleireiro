@@ -77,17 +77,18 @@
 }
 
 .btn-cancelar{
-    display:inline-block;
-    margin-top:10px;
-    padding:8px 14px;
+    display:block;
+    margin-top:15px;
+    padding:12px;
     background:#d32f2f;
     color:white;
+    text-align:center;
+    border-radius:8px;
     text-decoration:none;
-    border-radius:6px;
-    font-size:14px;
-    transition:0.2s;
+    font-weight:bold;
 }
 
 .btn-cancelar:hover{
     background:#b71c1c;
 }
+
