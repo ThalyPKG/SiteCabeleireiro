@@ -179,9 +179,14 @@ def agendamento():
 
             # trata horário
             if hasattr(horario_existente, "strftime"):
-                horario_existente = horario_existente.strftime("%H:%M")
+                horario_existente = horario_existente.strftime("%H:%M:%S")
             else:
-                horario_existente = str(horario_existente)[:5]
+                horario_existente = str(horario_existente)
+
+            # garante formato HH:MM
+            horario_existente = horario_existente.split(":")
+            horario_existente = f"{horario_existente[0]}:{horario_existente[1]}"
+            
 
             agendamento_existente = datetime.strptime(
                 f"{data_existente} {horario_existente}",
@@ -191,7 +196,7 @@ def agendamento():
             # 🔥 regra correta: soma 15 dias ao último agendamento
             proximo_permitido = agendamento_existente + timedelta(days=15)
 
-            if data_hora_agendamento < proximo_permitido:
+            if data_hora_agendamento < proximo_permitido.date():
                 dias_restantes = (proximo_permitido - data_hora_agendamento).days
 
                 cursor.close()
@@ -202,9 +207,6 @@ def agendamento():
                     "erro"
                 )
                 return redirect("/agendamento")
-
-
-
 
 
         cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
