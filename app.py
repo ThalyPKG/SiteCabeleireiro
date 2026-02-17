@@ -145,7 +145,7 @@ def agendamento():
             flash("Data ou horário inválido", "erro")
             return redirect("/agendamento")
 
-        agora = datetime.now()
+        agora = datetime.utcnow() - timedelta(hours=3)
 
         if data_hora_agendamento <= agora:
             flash("Não é possível agendar em horários que já passaram.", "erro")
