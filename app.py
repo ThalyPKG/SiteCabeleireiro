@@ -196,7 +196,7 @@ def agendamento():
             # 🔥 regra correta: soma 15 dias ao último agendamento
             proximo_permitido = agendamento_existente + timedelta(days=15)
 
-            if data_hora_agendamento < proximo_permitido.date():
+            if data_hora_agendamento < proximo_permitido:
                 dias_restantes = (proximo_permitido - data_hora_agendamento).days
 
                 cursor.close()
