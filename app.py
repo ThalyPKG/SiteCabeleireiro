@@ -160,40 +160,40 @@ def agendamento():
             return redirect("/agendamento")
 
 # ================= REGRA: 1 AGENDAMENTO A CADA 15 DIAS =================
-cursor.execute("""
-    SELECT data, horario
-    FROM agendamentos
-    WHERE usuario_id = %s
-    ORDER BY data DESC, horario DESC
-    LIMIT 1
-""", (session["usuario_id"],))
+        cursor.execute("""
+            SELECT data, horario
+            FROM agendamentos
+            WHERE usuario_id = %s
+            ORDER BY data DESC, horario DESC
+            LIMIT 1
+        """, (session["usuario_id"],))
 
-ultimo_agendamento = cursor.fetchone()
+        ultimo_agendamento = cursor.fetchone()
 
-if ultimo_agendamento:
-    data_existente = ultimo_agendamento["data"]
-    horario_existente = ultimo_agendamento["horario"]
+        if ultimo_agendamento:
+            data_existente = ultimo_agendamento["data"]
+            horario_existente = ultimo_agendamento["horario"]
 
-    if hasattr(data_existente, "strftime"):
-        data_existente = data_existente.strftime("%Y-%m-%d")
+            if hasattr(data_existente, "strftime"):
+                data_existente = data_existente.strftime("%Y-%m-%d")
 
-    horario_existente = str(horario_existente)[:5]
+            horario_existente = str(horario_existente)[:5]
 
-    agendamento_existente = datetime.strptime(
-        f"{data_existente} {horario_existente}",
-        "%Y-%m-%d %H:%M"
-    )
+            agendamento_existente = datetime.strptime(
+                f"{data_existente} {horario_existente}",
+                "%Y-%m-%d %H:%M"
+            )
 
-    dias_passados = (datetime.now() - agendamento_existente).days
+            dias_passados = (datetime.now() - agendamento_existente).days
 
-    if dias_passados < 15:
-        cursor.close()
-        db.close()
-        flash(
-            f"Você já possui um agendamento há {dias_passados} dias. Aguarde 15 dias para novo agendamento.",
-            "erro"
-        )
-        return redirect("/agendamento")
+            if dias_passados < 15:
+                cursor.close()
+                db.close()
+                flash(
+                    f"Você já possui um agendamento há {dias_passados} dias. Aguarde 15 dias para novo agendamento.",
+                    "erro"
+                )
+                return redirect("/agendamento")
 
 
 
