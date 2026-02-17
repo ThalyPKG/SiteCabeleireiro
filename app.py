@@ -192,7 +192,7 @@ def agendamento():
 
                 limite = agendamento_existente + timedelta(days=15)
 
-                if dias_restantes <= 15:
+                if datetime.now() <= limite:
                     flash(
                         "Você já possui um agendamento ativo. "
                         "Cancele o atual ou aguarde 15 dias para marcar outro.",
@@ -206,6 +206,8 @@ def agendamento():
 
         cursor.execute("SELECT id FROM agendamentos WHERE data=%s AND horario=%s", (data, horario))
         if cursor.fetchone():
+            cursor.close()
+            db.close()
             flash("Horário já reservado", "erro")
             return redirect("/agendamento")
 
