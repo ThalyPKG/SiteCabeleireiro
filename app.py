@@ -556,7 +556,7 @@ def cancelar_agendamento(id):
     cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT data, horario, usuario_id
+        SELECT data, horario, usuario_id, email
         FROM agendamentos
         WHERE id=%s
     """, (id,))
@@ -591,16 +591,18 @@ def cancelar_agendamento(id):
         flash("Cancelamento permitido apenas com 24 horas de antecedência.", "erro")
         return redirect("/agendamentos")
 
-    enviar_email(
-        "thalysondasilvaribeiro@gmail.com",
-        "❌ Agendamento cancelado",
-        f"""
-Um cliente cancelou um horário.
+    mensagem_admin = f"""
+Agendamento cancelado ❌
 
+Cliente: {ag['email']}
 📅 Data: {data_str}
 ⏰ Hora: {hora_str}
-Cliente: {ag['email']}
 """
+
+    enviar_email(
+        "thalysondasilvaribeiro@gmail.com",
+        "Agendamento cancelado",
+        mensagem_admin
     )
 
     cursor.execute("DELETE FROM agendamentos WHERE id=%s", (id,))
