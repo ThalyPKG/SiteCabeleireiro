@@ -7,6 +7,22 @@ import mysql.connector
 import os
 import re
 
+def limpar_horarios_passados():
+    db = get_db_salao()
+    cursor = db.cursor()
+
+    agora = datetime.utcnow() - timedelta(hours=3)
+
+    cursor.execute("""
+        DELETE FROM agendamentos
+        WHERE CONCAT(data, ' ', horario) < %s
+    """, (agora,))
+
+    db.commit()
+    cursor.close()
+    db.close()
+
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -122,7 +138,7 @@ def logout():
 
 @app.route("/agendamento", methods=["GET", "POST"])
 def agendamento():
-
+    limpar_horarios_passados()
 
     hoje = datetime.now().strftime("%Y-%m-%d")
     if "usuario_id" not in session:
@@ -290,6 +306,7 @@ Caso precise alterar, entre em contato.
 
 @app.route("/agendamentos")
 def agendamentos():
+    limpar_horarios_passados()
     if "usuario_id" not in session:
         flash("Faça login primeiro", "erro")
         return redirect("/login")
@@ -545,14 +562,12 @@ def cancelar_agendamento(id):
     """, (id,))
     ag = cursor.fetchone()
 
-    # ❌ não existe ou não pertence ao usuário
     if not ag or ag["usuario_id"] != session["usuario_id"]:
         cursor.close()
         db.close()
         flash("Agendamento não encontrado", "erro")
         return redirect("/agendamentos")
 
-    # ✅ converter data e hora corretamente
     data_val = ag["data"]
     hora_val = ag["horario"]
 
@@ -561,7 +576,6 @@ def cancelar_agendamento(id):
     else:
         data_str = str(data_val)
 
-    # aceita HH:MM:SS
     hora_str = str(hora_val)[:8]
 
     data_hora_agendamento = datetime.strptime(
@@ -569,17 +583,26 @@ def cancelar_agendamento(id):
         "%Y-%m-%d %H:%M:%S"
     )
 
-    # horário atual (Brasil)
     agora = datetime.utcnow() - timedelta(hours=3)
 
-    # 🚫 bloquear cancelamento em cima da hora
     if data_hora_agendamento - agora < timedelta(hours=24):
         cursor.close()
         db.close()
         flash("Cancelamento permitido apenas com 24 horas de antecedência.", "erro")
         return redirect("/agendamentos")
 
-    # 🗑 deletar
+    enviar_email(
+        "thalysondasilvaribeiro@gmail.com",
+        "❌ Agendamento cancelado",
+        f"""
+Um cliente cancelou um horário.
+
+📅 Data: {data_str}
+⏰ Hora: {hora_str}
+Cliente: {ag['email']}
+"""
+    )
+
     cursor.execute("DELETE FROM agendamentos WHERE id=%s", (id,))
     db.commit()
 

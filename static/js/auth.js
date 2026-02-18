@@ -79,17 +79,31 @@ const toggle = document.getElementById("menu-toggle");
 const navMenu = document.getElementById("nav-menu");
 const overlay = document.getElementById("menu-overlay");
 
+function fecharMenu() {
+    navMenu.classList.remove("active");
+    overlay.classList.remove("active");
+    overlay.style.display = "none";
+}
+
 if (toggle && navMenu && overlay) {
     toggle.addEventListener("click", () => {
-        navMenu.classList.toggle("active");
+        const ativo = navMenu.classList.toggle("active");
         overlay.classList.toggle("active");
+        overlay.style.display = ativo ? "block" : "none";
     });
 
-    overlay.addEventListener("click", () => {
-        navMenu.classList.remove("active");
-        overlay.classList.remove("active");
+    overlay.addEventListener("click", fecharMenu);
+
+    // 🔹 fecha ao clicar em links
+    document.querySelectorAll("#nav-menu a").forEach(link => {
+        link.addEventListener("click", fecharMenu);
     });
+
+    // 🔹 fecha ao voltar no histórico (botão do celular)
+    window.addEventListener("pageshow", fecharMenu);
+    window.addEventListener("popstate", fecharMenu);
 }
+
 
 
 });
