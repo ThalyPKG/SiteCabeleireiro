@@ -163,9 +163,10 @@ def agendamento():
             SELECT data, horario
             FROM agendamentos
             WHERE usuario_id = %s
+            AND data <= %s
             ORDER BY data DESC, horario DESC
             LIMIT 1
-        """, (session["usuario_id"],))
+        """, (session["usuario_id"], data))
 
         ultimo_agendamento = cursor.fetchone()
 
@@ -572,10 +573,10 @@ def cancelar_agendamento(id):
     agora = datetime.utcnow() - timedelta(hours=3)
 
     # 🚫 bloquear cancelamento em cima da hora
-    if data_hora_agendamento - agora < timedelta(hours=2):
+    if data_hora_agendamento - agora < timedelta(hours=24):
         cursor.close()
         db.close()
-        flash("Cancelamento permitido apenas com 2 horas de antecedência.", "erro")
+        flash("Cancelamento permitido apenas com 24 horas de antecedência.", "erro")
         return redirect("/agendamentos")
 
     # 🗑 deletar
@@ -587,7 +588,6 @@ def cancelar_agendamento(id):
 
     flash("Agendamento cancelado com sucesso.", "sucesso")
     return redirect("/agendamentos")
-
 
 
 if __name__ == "__main__":
