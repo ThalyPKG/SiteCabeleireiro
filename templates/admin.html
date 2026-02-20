@@ -6,6 +6,7 @@
     <title>Painel Admin - Dia</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <body>
@@ -17,7 +18,7 @@
     <div class="calendario">
         <form method="GET" action="/admin">
             <label>Selecionar data:</label>
-            <input type="date" name="data" value="{{ hoje }}">
+            <input type="text" id="data" name="data" value="{{ hoje }}" min="{{ hoje }}">
             <button type="submit">Ver dia</button>
         </form>
     </div>
@@ -90,6 +91,16 @@
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+flatpickr("#data", {
+    dateFormat: "Y-m-d",
+    defaultDate: "{{ hoje }}",
+    locale: "pt"
+});
+</script>
 
 </body>
 </html>
