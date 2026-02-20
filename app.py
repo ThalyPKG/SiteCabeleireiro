@@ -633,29 +633,24 @@ Cliente: {ag['email']}
 
 @app.route("/admin")
 def admin():
-    if "usuario_id" not in session:
-        return redirect("/login")
-
-    # 🔐 verifica se é admin
-    db_login = get_db_login()
-    cursor_login = db_login.cursor(dictionary=True)
-
-    cursor_login.execute(
-        "SELECT is_admin FROM usuario WHERE codigo=%s",
-        (session["usuario_id"],)
-    )
-    user = cursor_login.fetchone()
-    cursor_login.close()
-    db_login.close()
-
-    if not user or user["is_admin"] != 1:
+    if not verificar_admin():
         return "Acesso negado", 403
 
-    # 📊 calcula resumo do dia
+    data = request.args.get("data")
+
+    if not data:
+        data = datetime.now().strftime("%Y-%m-%d")
+
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
-    hoje = datetime.now().strftime("%Y-%m-%d")
+    cursor.execute("""
+        SELECT id, email, horario, valor_pix, valor_dinheiro
+        FROM agendamentos
+        WHERE data = %s
+        ORDER BY horario
+    """, (data,))
+    agendamentos = cursor.fetchall()
 
     cursor.execute("""
         SELECT
@@ -664,18 +659,22 @@ def admin():
             SUM(valor_final) AS total
         FROM agendamentos
         WHERE data = %s AND finalizado = 1
-    """, (hoje,))
-
+    """, (data,))
     resumo = cursor.fetchone() or {}
 
     cursor.close()
     db.close()
 
-    return render_template("admin.html", resumo=resumo)
+    return render_template(
+        "admin.html",
+        agendamentos=agendamentos,
+        resumo=resumo,
+        hoje=data
+    )
 
 @app.route("/admin/finalizar", methods=["POST"])
 def finalizar_cliente():
-    if not finalizar_cliente():
+    if not verificar_admin():
         return "Acesso Negado", 403
     
 
@@ -709,10 +708,9 @@ def salvar_pagamento():
         return "Acesso Negado", 403
 
     id_cliente = request.form["id"]
-    valor_pix = request.form["valor_pix"] or 0
-    valor_dinheiro = request.form["valor_dinheiro"] or 0
-
-    total = float(valor_pix) + float(valor_dinheiro)
+    valor_pix = float(request.form.get("valor_pix") or 0)
+    valor_dinheiro = float(request.form.get("valor_dinheiro") or 0)
+    total = valor_pix + valor_dinheiro
 
     db = get_db_salao()
     cursor = db.cursor()
@@ -731,6 +729,49 @@ def salvar_pagamento():
     db.close()
 
     return redirect("/admin/dia")
+
+@app.route("/admin/dia")
+def admin_dia():
+    if not verificar_admin():
+        return "Acesso negado", 403
+
+    data = request.args.get("data")
+
+    if not data:
+        data = datetime.now().strftime("%Y-%m-%d")
+
+    db = get_db_salao()
+    cursor = db.cursor(dictionary=True)
+
+    # clientes do dia
+    cursor.execute("""
+        SELECT id, email, horario, valor_pix, valor_dinheiro
+        FROM agendamentos
+        WHERE data = %s
+        ORDER BY horario
+    """, (data,))
+    agendamentos = cursor.fetchall()
+
+    # resumo do dia
+    cursor.execute("""
+        SELECT
+            SUM(valor_pix) AS pix,
+            SUM(valor_dinheiro) AS dinheiro,
+            SUM(valor_final) AS total
+        FROM agendamentos
+        WHERE data = %s AND finalizado = 1
+    """, (data,))
+    resumo = cursor.fetchone() or {}
+
+    cursor.close()
+    db.close()
+
+    return render_template(
+        "admin.html",
+        agendamentos=agendamentos,
+        resumo=resumo,
+        hoje=data
+    )
 
 if __name__ == "__main__":
     app.run()

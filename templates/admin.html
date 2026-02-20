@@ -15,7 +15,7 @@
     <h1>Painel do Dia</h1>
 
     <div class="calendario">
-        <form method="GET" action="/admin/dia">
+        <form method="GET" action="/admin">
             <label>Selecionar data:</label>
             <input type="date" name="data" value="{{ hoje }}">
             <button type="submit">Ver dia</button>
@@ -32,12 +32,12 @@
 
             <form method="POST"
                   action="/admin/salvar_pagamento"
-                  class="cliente-card">
+                  class="cliente-card {{ 'pago' if c.valor_pix or c.valor_dinheiro }}">
 
                 <input type="hidden" name="id" value="{{ c.id }}">
 
                 <div class="cliente-info">
-                    <h3>{{ c.nome }}</h3>
+                    <h3>{{ c.email }}</h3>
                     <p>Horário: {{ c.horario }}</p>
                 </div>
 
@@ -83,7 +83,7 @@
             <p>💳 PIX: <strong>R$ {{ resumo.pix or 0 }}</strong></p>
             <p>💵 Dinheiro: <strong>R$ {{ resumo.dinheiro or 0 }}</strong></p>
             <p class="total">
-                TOTAL: R$ {{ resumo.total or 0 }}
+                Total: R$ {{ resumo.total or 0 }}
             </p>
         </div>
 
