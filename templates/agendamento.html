@@ -6,7 +6,7 @@
   <title>Agendamento</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/agendamento.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="preload" as="image" href="{{ url_for('static', filename='img/background.png') }}">
 </head>
 <body>
 
@@ -57,7 +57,7 @@
 
   <div class="section">
     <h2>Escolha a data</h2>
-    <input type="text" name="data" id="data" min="{{ hoje }}" required>
+    <input type="date" name="data" id="data" min="{{ hoje }}" required>
     <p id="msgData" class="msg"></p>
   </div>
 
@@ -81,15 +81,6 @@
 
 <script src="{{ url_for('static', filename='js/agendamento.js') }}"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script>
-flatpickr("#data", {
-    dateFormat: "Y-m-d",
-    defaultDate: "{{ hoje }}",
-    locale: "pt"
-});
-</script>
 
 </body>
 </html>

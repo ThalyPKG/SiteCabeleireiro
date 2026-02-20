@@ -6,14 +6,17 @@
 }
 
 body {
-  background: url('../img/background.png') no-repeat;
-  background-size: cover;
-  background-position: center;
-  color: white;
-  padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100dvh;
+    background: url('../img/background.png') no-repeat center center;
+    background-size: cover;
 }
 
-
+.container {
+  min-height: calc(100dvh - 40px);
+}
 
 .container {
   max-width: 500px;

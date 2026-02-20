@@ -16,10 +16,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background: url('../img/background.png') no-repeat;
+    min-height: 100dvh;
+    background: url('../img/background.png') no-repeat center center;
     background-size: cover;
-    background-position: center;
+}
+
+.container {
+  min-height: calc(100dvh - 40px);
 }
 
 .wrapper {
