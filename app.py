@@ -614,6 +614,31 @@ Cliente: {ag['email']}
     flash("Agendamento cancelado com sucesso.", "sucesso")
     return redirect("/agendamentos")
 
+@app.route("/admin")
+def admin():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    db_login = get_db_login()
+    cursor_login = db_login.cursor(dictionary=True)
+
+    cursor_login.execute(
+        "SELECT is_admin FROM usuario WHERE codigo=%s",
+        (session["usuario_id"],)
+    )
+
+    user = cursor_login.fetchone()
+
+    cursor_login.close()
+    db_login.close()
+
+    # bloqueia clientes normais
+    if not user or user["is_admin"] != 1:
+        return "Acesso negado"
+
+    return render_template("admin.html")
+
 
 if __name__ == "__main__":
     app.run()
