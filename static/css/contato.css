@@ -7,13 +7,13 @@ body {
 
 .contato-container {
     max-width: 450px;
-    width: 90%; /* Ajuste para telas pequenas */
+    width: 90%;
     margin: 30px auto;
     padding: 20px;
     background: #1e293b;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    overflow: hidden; /* Evita scroll interno */
+    overflow: hidden;
 }
 
 .contato-container h1 {
