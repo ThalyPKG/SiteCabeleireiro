@@ -644,44 +644,43 @@ def admin_dia():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    hoje = datetime.now().strftime("%Y-%m-%d")
+    data_escolhida = request.args.get("data")
+
+    if not data_escolhida:
+        data_escolhida = datetime.now().strftime("%Y-%m-%d")
 
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
-    # ================= LISTA CLIENTES =================
     cursor.execute("""
         SELECT *
         FROM agendamentos
         WHERE data=%s
         ORDER BY horario
-    """, (hoje,))
+    """, (data_escolhida,))
 
     agendamentos = cursor.fetchall()
 
-    # ================= RESUMO DO DIA =================
+    # RESUMO AUTOMÁTICO
     cursor.execute("""
         SELECT
-            SUM(valor_final) as total,
-            SUM(CASE WHEN forma_pagamento='pix'
-                THEN valor_final ELSE 0 END) as pix,
-            SUM(CASE WHEN forma_pagamento='dinheiro'
-                THEN valor_final ELSE 0 END) as dinheiro
+            SUM(valor_pix + valor_dinheiro) as total,
+            SUM(valor_pix) as pix,
+            SUM(valor_dinheiro) as dinheiro
         FROM agendamentos
-        WHERE data=%s AND finalizado=1
-    """, (hoje,))
+        WHERE data=%s
+    """, (data_escolhida,))
 
     resumo = cursor.fetchone()
 
-    # ✅ SÓ AGORA FECHA
     cursor.close()
     db.close()
 
     return render_template(
         "admin_dia.html",
         agendamentos=agendamentos,
-        hoje=hoje,
-        resumo=resumo
+        resumo=resumo,
+        hoje=data_escolhida
     )
 
 @app.route("/admin/finalizar", methods=["POST"])
@@ -704,6 +703,33 @@ def finalizar_cliente():
             finalizado=1
         WHERE id=%s
     """,(pagamento, valor, id_ag))
+
+    db.commit()
+    cursor.close()
+    db.close()
+
+    return redirect("/admin/dia")
+
+@app.route("/admin/salvar_pagamento", methods=["POST"])
+def salvar_pagamento():
+
+    id_cliente = request.form["id"]
+    valor_pix = request.form["valor_pix"] or 0
+    valor_dinheiro = request.form["valor_dinheiro"] or 0
+
+    total = float(valor_pix) + float(valor_dinheiro)
+
+    db = get_db_salao()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE agendamentos
+        SET valor_pix=%s,
+            valor_dinheiro=%s,
+            valor_final=%s,
+            finalizado=1
+        WHERE id=%s
+    """, (valor_pix, valor_dinheiro, total, id_cliente))
 
     db.commit()
     cursor.close()
