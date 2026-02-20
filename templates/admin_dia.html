@@ -1,0 +1,45 @@
+<h1>Fechamento do Dia - {{ hoje }}</h1>
+
+{% for ag in agendamentos %}
+
+<form method="POST" action="/admin/finalizar" style="border:1px solid #ccc;padding:10px;margin:10px">
+
+<input type="hidden" name="id" value="{{ ag.id }}">
+
+<b>{{ ag.email }}</b><br>
+Horário: {{ ag.horario }}<br>
+Serviços: {{ ag.servicos }}<br>
+
+Valor:
+<input type="number" step="0.01" name="valor"
+value="{{ ag.total }}">
+
+<br><br>
+
+Pagamento:
+
+<label>
+<input type="radio" name="pagamento" value="pix" required>
+PIX
+</label>
+
+<label>
+<input type="radio" name="pagamento" value="dinheiro">
+Dinheiro
+</label>
+
+<br><br>
+
+<button type="submit">Finalizar Cliente</button>
+
+<hr>
+
+<h2>Resumo do Dia</h2>
+
+Total: R$ {{ resumo.total or 0 }} <br>
+PIX: R$ {{ resumo.pix or 0 }} <br>
+Dinheiro: R$ {{ resumo.dinheiro or 0 }}
+
+</form>
+
+{% endfor %}
