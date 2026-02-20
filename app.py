@@ -7,6 +7,22 @@ import mysql.connector
 import os
 import re
 
+def verificar_admin():
+    if "usuario_id" not in session:
+        return False
+
+    db = get_db_login()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT is_admin FROM usuario WHERE codigo=%s",
+        (session["usuario_id"],)
+    )
+    user = cursor.fetchone()
+    cursor.close()
+    db.close()
+
+    return user and user["is_admin"] == 1
+
 def limpar_horarios_passados():
     db = get_db_salao()
     cursor = db.cursor()
@@ -122,6 +138,7 @@ def login():
         if user and check_password_hash(user["senha"], senha):
             session["usuario_id"] = user["codigo"]
             session["email"] = user["email"]
+            session["is_admin"] = user.get("is_admin", 0)
             flash("Login realizado com sucesso!", "login")
             return redirect("/index")
         else:
@@ -638,53 +655,11 @@ def admin():
 
     return render_template("admin.html")
 
-@app.route("/admin/dia")
-def admin_dia():
-
-    if "usuario_id" not in session:
-        return redirect("/login")
-
-    data_escolhida = request.args.get("data")
-
-    if not data_escolhida:
-        data_escolhida = datetime.now().strftime("%Y-%m-%d")
-
-    db = get_db_salao()
-    cursor = db.cursor(dictionary=True)
-
-    cursor.execute("""
-        SELECT *
-        FROM agendamentos
-        WHERE data=%s
-        ORDER BY horario
-    """, (data_escolhida,))
-
-    agendamentos = cursor.fetchall()
-
-    # RESUMO AUTOMÁTICO
-    cursor.execute("""
-        SELECT
-            SUM(valor_pix + valor_dinheiro) as total,
-            SUM(valor_pix) as pix,
-            SUM(valor_dinheiro) as dinheiro
-        FROM agendamentos
-        WHERE data=%s
-    """, (data_escolhida,))
-
-    resumo = cursor.fetchone()
-
-    cursor.close()
-    db.close()
-
-    return render_template(
-        "admin_dia.html",
-        agendamentos=agendamentos,
-        resumo=resumo,
-        hoje=data_escolhida
-    )
-
 @app.route("/admin/finalizar", methods=["POST"])
 def finalizar_cliente():
+    if not finalizar_cliente():
+        return "Acesso Negado", 403
+    
 
     if "usuario_id" not in session:
         return redirect("/login")
@@ -712,6 +687,8 @@ def finalizar_cliente():
 
 @app.route("/admin/salvar_pagamento", methods=["POST"])
 def salvar_pagamento():
+    if not verificar_admin():
+        return "Acesso Negado", 403
 
     id_cliente = request.form["id"]
     valor_pix = request.form["valor_pix"] or 0

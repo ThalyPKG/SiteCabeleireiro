@@ -20,6 +20,12 @@
             <div class="menu-toggle" id="menu-toggle">☰</div>
         
             <ul class="nav-menu" id="nav-menu">  
+
+                {% if session.get('is_admin') == 1 %}
+                <li class="nav-item">
+                    <a href="/admin" class="nav-link">Painel ADM</a>
+                </li>
+                {% endif %}
                 <li class="nav-item">
                     <a href="/index" class="nav-link">Home</a>
                 </li>
