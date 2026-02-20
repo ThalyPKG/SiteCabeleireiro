@@ -633,10 +633,10 @@ Cliente: {ag['email']}
 
 @app.route("/admin")
 def admin():
-
     if "usuario_id" not in session:
         return redirect("/login")
 
+    # 🔐 verifica se é admin
     db_login = get_db_login()
     cursor_login = db_login.cursor(dictionary=True)
 
@@ -644,14 +644,32 @@ def admin():
         "SELECT is_admin FROM usuario WHERE codigo=%s",
         (session["usuario_id"],)
     )
-
     user = cursor_login.fetchone()
-
     cursor_login.close()
     db_login.close()
 
     if not user or user["is_admin"] != 1:
-        return "Acesso negado"
+        return "Acesso negado", 403
+
+    # 📊 calcula resumo do dia
+    db = get_db_salao()
+    cursor = db.cursor(dictionary=True)
+
+    hoje = datetime.now().strftime("%Y-%m-%d")
+
+    cursor.execute("""
+        SELECT
+            SUM(valor_pix) AS pix,
+            SUM(valor_dinheiro) AS dinheiro,
+            SUM(valor_final) AS total
+        FROM agendamentos
+        WHERE data = %s AND finalizado = 1
+    """, (hoje,))
+
+    resumo = cursor.fetchone() or {}
+
+    cursor.close()
+    db.close()
 
     return render_template("admin.html", resumo=resumo)
 
