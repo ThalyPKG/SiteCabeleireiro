@@ -653,7 +653,7 @@ def admin():
     if not user or user["is_admin"] != 1:
         return "Acesso negado"
 
-    return render_template("admin.html")
+    return render_template("admin.html", resumo=resumo)
 
 @app.route("/admin/finalizar", methods=["POST"])
 def finalizar_cliente():
