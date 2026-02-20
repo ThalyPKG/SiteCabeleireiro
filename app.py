@@ -644,55 +644,45 @@ def admin_dia():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    db_login = get_db_login()
-    cursor_login = db_login.cursor(dictionary=True)
-
-    cursor_login.execute(
-        "SELECT is_admin FROM usuario WHERE codigo=%s",
-        (session["usuario_id"],)
-    )
-
-    user = cursor_login.fetchone()
-    cursor_login.close()
-    db_login.close()
-
-    if not user or user["is_admin"] != 1:
-        return "Acesso negado"
-
     hoje = datetime.now().strftime("%Y-%m-%d")
 
     db = get_db_salao()
     cursor = db.cursor(dictionary=True)
 
+    # ================= LISTA CLIENTES =================
     cursor.execute("""
         SELECT *
         FROM agendamentos
         WHERE data=%s
         ORDER BY horario
-    """,(hoje,))
+    """, (hoje,))
 
     agendamentos = cursor.fetchall()
 
-    cursor.close()
-    db.close()
-
+    # ================= RESUMO DO DIA =================
     cursor.execute("""
-SELECT
-SUM(valor_final) as total,
-SUM(CASE WHEN forma_pagamento='pix'
-THEN valor_final ELSE 0 END) as pix,
-SUM(CASE WHEN forma_pagamento='dinheiro'
-THEN valor_final ELSE 0 END) as dinheiro
-FROM agendamentos
-WHERE data=%s AND finalizado=1
-""",(hoje,))
+        SELECT
+            SUM(valor_final) as total,
+            SUM(CASE WHEN forma_pagamento='pix'
+                THEN valor_final ELSE 0 END) as pix,
+            SUM(CASE WHEN forma_pagamento='dinheiro'
+                THEN valor_final ELSE 0 END) as dinheiro
+        FROM agendamentos
+        WHERE data=%s AND finalizado=1
+    """, (hoje,))
 
     resumo = cursor.fetchone()
 
-    return render_template("admin_dia.html",
-                       agendamentos=agendamentos,
-                       hoje=hoje,
-                       resumo=resumo)
+    # ✅ SÓ AGORA FECHA
+    cursor.close()
+    db.close()
+
+    return render_template(
+        "admin_dia.html",
+        agendamentos=agendamentos,
+        hoje=hoje,
+        resumo=resumo
+    )
 
 @app.route("/admin/finalizar", methods=["POST"])
 def finalizar_cliente():
